@@ -37,6 +37,22 @@ canvas:active{cursor:grabbing}
 .send-btn{background:var(--accent);color:#0b1329;font-weight:bold;border:none;padding:6px 12px;border-radius:6px;cursor:pointer}
 .news-feed{max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:.8rem}
 .news-item{padding:6px 8px;background:rgba(0,0,0,.3);border-left:3px solid var(--accent);border-radius:4px}
+.turn-box{position:relative}
+.menu-btn{background:rgba(51,65,85,.8);color:#fff;border:1px solid var(--panel-border);padding:8px 12px;border-radius:8px;cursor:pointer}
+#game-menu{display:none;position:absolute;top:calc(100% + 18px);right:0;width:190px;flex-direction:column;gap:6px;z-index:11}
+#game-menu.open{display:flex}
+.left-overlay{transition:transform .25s}
+body.drawer-open .left-overlay{transform:translateX(320px)}
+#country-drawer{position:fixed;top:85px;left:0;bottom:20px;width:300px;border-radius:0 12px 12px 0;z-index:12;transform:translateX(-102%);transition:transform .25s;display:flex;flex-direction:column}
+body.drawer-open #country-drawer{transform:none}
+#country-drawer .country-select-list{flex:1;min-height:0;max-height:none}
+#drawer-tab{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:13;background:var(--panel-bg);color:#fff;border:1px solid var(--panel-border);border-left:none;border-radius:0 10px 10px 0;padding:14px 9px;font-size:1.1rem;cursor:pointer;transition:left .25s}
+body.drawer-open #drawer-tab{left:300px}
+#start-modal{display:none;position:fixed;inset:0;z-index:50;background:rgba(5,10,25,.7);align-items:center;justify-content:center}
+#start-modal .panel-card{width:340px}
+#start-modal p{margin:6px 0 4px;font-size:.85rem;color:var(--text-muted)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel-bg);border:1px solid var(--panel-border);padding:8px 16px;border-radius:8px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
@@ -53,8 +69,15 @@ canvas:active{cursor:grabbing}
         <div class="stat-box"><span>İstikrar</span><span id="stat-stability">%85</span></div>
     </div>
     <div class="turn-box">
+        <button class="menu-btn" onclick="toggleMenu()" title="Oyun menüsü">☰</button>
         <span id="current-date" style="font-size:.9rem;font-weight:bold">2026 / Ocak</span>
         <button class="next-turn-btn" onclick="nextTurn()">Turu Bitir ➡️</button>
+        <div id="game-menu" class="panel-card">
+            <button class="action-btn" onclick="saveGame()">💾 Kaydet</button>
+            <button class="action-btn" onclick="exportGame()">⬇️ Dosyaya aktar</button>
+            <button class="action-btn" onclick="document.getElementById('load-file').click()">📂 Dosyadan yükle</button>
+            <button class="action-btn" onclick="newGame()">🔄 Yeni oyun</button>
+        </div>
     </div>
 </div>
 
@@ -69,13 +92,20 @@ canvas:active{cursor:grabbing}
             <button class="action-btn" onclick="doAction('war')" style="border-left:3px solid var(--danger)">⚔️ Savaş</button>
         </div>
     </div>
-    <div class="panel-card">
-        <h4 style="font-size:.85rem;color:var(--text-muted)">Dünya Ülkeleri</h4>
-        <input type="text" id="country-search" class="chat-input" style="width:100%;margin-top:8px" placeholder="Ülke ara..." oninput="renderCountryList()">
-        <ul class="country-select-list" id="country-list"></ul>
-    </div>
 </div>
 
+<button id="drawer-tab" onclick="toggleDrawer()" title="Dünya ülkeleri">🌍</button>
+<aside id="country-drawer" class="panel-card">
+    <h4 style="font-size:.85rem;color:var(--text-muted)">Dünya Ülkeleri</h4>
+    <input type="text" id="country-search" class="chat-input" style="width:100%;margin-top:8px" placeholder="Ülke ara..." oninput="renderCountryList()">
+    <ul class="country-select-list" id="country-list"></ul>
+</aside>
+<div id="start-modal"><div class="panel-card">
+    <h3 style="color:var(--accent);font-size:1rem">Kayıtlı oyun bulundu</h3><p></p>
+    <div class="action-grid"><button class="action-btn" id="btn-continue">▶️ Devam et</button><button class="action-btn" id="btn-new">🆕 Yeni oyun</button></div>
+</div></div>
+<input type="file" id="load-file" accept=".json" hidden onchange="importGame(this.files[0]); this.value=''">
+<div id="toast"></div>
 <div class="right-overlay">
     <div class="panel-card">
         <h4 style="font-size:.85rem;margin-bottom:6px">💬 Lider Diplomatik Hattı</h4>
@@ -381,7 +411,7 @@ resizeCanvas();
     for (const url of GEO_URLS) {
         try {
             prepare(await d3.json(url));
-            resizeCanvas(); init();
+            resizeCanvas(); init(); boot();
             return;
         } catch (err) { console.warn('Harita verisi alınamadı:', url, err); }
     }
@@ -389,7 +419,83 @@ resizeCanvas();
     renderMap();
 })();
 
-/* ====================== OYUN MANTIĞI (değişmedi) ====================== */
+/* ====================== KAYIT SİSTEMİ ====================== */
+const SAVE_KEY = 'paxHistoriaSave_v1';
+let newsLog = [], chatLog = [], started = false;
+
+function toast(t) {
+    const el = document.getElementById('toast');
+    el.textContent = t; el.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+function snapshot() {
+    return { v: 1, t: Date.now(), playerCountry, selectedTarget, year, month, countries, countryOwners,
+             newsLog: newsLog.slice(0, 40), chatLog: chatLog.slice(-40) };
+}
+function saveGame(silent) {
+    if (!started) return;
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot())); if (silent !== true) toast('Oyun kaydedildi'); }
+    catch (e) { if (silent !== true) toast('Kaydedilemedi: tarayıcı depolaması kullanılamıyor'); }
+}
+function applySave(d) {
+    if (!d || d.v !== 1 || !d.countries || !d.countries[d.playerCountry]) throw new Error('bad save');
+    Object.assign(countries, d.countries);
+    playerCountry = d.playerCountry;
+    selectedTarget = countries[d.selectedTarget] && d.selectedTarget !== playerCountry
+        ? d.selectedTarget : Object.keys(countries).find(k => k !== playerCountry);
+    year = d.year; month = d.month; countryOwners = d.countryOwners || {};
+    newsLog = d.newsLog || []; chatLog = d.chatLog || [];
+    if (newsLog.length) renderNews();
+    if (chatLog.length) { document.getElementById('chat-box').innerHTML = ''; chatLog.forEach(([c, t]) => drawChat(c, t)); }
+    document.getElementById('current-date').innerText = `${year} / ${months[month - 1]}`;
+    init(); renderMap();
+}
+function boot() {
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
+    if (!d || d.v !== 1) { started = true; return; }
+    const m = document.getElementById('start-modal');
+    m.querySelector('p').textContent = `${d.playerCountry} • ${d.year} / ${months[d.month - 1]} • ${new Date(d.t).toLocaleString('tr-TR')}`;
+    m.style.display = 'flex';
+    document.getElementById('btn-continue').onclick = () => {
+        try { applySave(d); } catch (e) { toast('Kayıt bozuk, yeni oyun başlatıldı'); }
+        started = true; m.style.display = 'none';
+    };
+    document.getElementById('btn-new').onclick = () => { started = true; m.style.display = 'none'; };
+}
+function exportGame() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(snapshot())], { type: 'application/json' }));
+    a.download = `paxhistoria-${year}-${String(month).padStart(2, '0')}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+}
+function importGame(file) {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+        try { applySave(JSON.parse(r.result)); started = true; saveGame(true); toast('Kayıt yüklendi'); }
+        catch (e) { toast('Geçersiz kayıt dosyası'); }
+    };
+    r.readAsText(file);
+}
+function newGame() {
+    if (!confirm('Mevcut ilerleme silinecek. Yeni oyun başlatılsın mı?')) return;
+    started = false;
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    location.reload();
+}
+window.addEventListener('beforeunload', () => saveGame(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(true); });
+
+/* ====================== ARAYÜZ: ÇEKMECE VE MENÜ ====================== */
+function toggleDrawer() { document.body.classList.toggle('drawer-open'); }
+function toggleMenu() { document.getElementById('game-menu').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('.turn-box')) document.getElementById('game-menu').classList.remove('open'); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { document.body.classList.remove('drawer-open'); document.getElementById('game-menu').classList.remove('open'); }
+});
+
+/* ====================== OYUN MANTIĞI ====================== */
 function init() { renderCountryList(); updatePlayerStats(); updateTargetInfo(); }
 
 function renderCountryList() {
@@ -440,13 +546,14 @@ function nextTurn() {
     countries[playerCountry].money += 5;
     updatePlayerStats();
     addNews(`Tarih ilerledi: ${months[month - 1]} ${year}.`);
+    saveGame(true);
 }
 
-function addNews(text) {
-    const item = document.createElement("div");
-    item.className = "news-item";
-    item.innerText = text;
-    document.getElementById("news-feed").prepend(item);
+function addNews(text) { newsLog.unshift(text); newsLog.length = Math.min(newsLog.length, 40); renderNews(); }
+function renderNews() {
+    const feed = document.getElementById("news-feed");
+    feed.innerHTML = "";
+    newsLog.forEach(t => { const item = document.createElement("div"); item.className = "news-item"; item.innerText = t; feed.appendChild(item); });
 }
 
 function doAction(type) {
@@ -468,13 +575,15 @@ function doAction(type) {
         addNews(`⚔️ ${t.name} ülkesine savaş açıldı!`);
     }
     updatePlayerStats(); updateTargetInfo(); renderCountryList(); renderMap();
+    saveGame(true);
 }
 
-function addChat(cls, text) {
+function drawChat(cls, text) {
     const box = document.getElementById("chat-box"), d = document.createElement("div");
     d.className = "chat-msg " + cls; d.textContent = text;
     box.appendChild(d); box.scrollTop = box.scrollHeight;
 }
+function addChat(cls, text) { chatLog.push([cls, text]); if (chatLog.length > 40) chatLog.shift(); drawChat(cls, text); }
 
 function sendDiplomacy() {
     const input = document.getElementById("chat-input"), val = input.value.trim(), t = countries[selectedTarget];
