@@ -15,13 +15,12 @@
             --danger: #ef4444;
             --success: #22c55e;
             
-            --ocean-color: #091322; /* Ekran görüntüsündeki derin, koyu okyanus mavisi */
+            --ocean-color: #091322;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body, html { width: 100%; height: 100%; overflow: hidden; background-color: var(--ocean-color); color: var(--text-main); }
 
-        /* CANVAS HARİTA ALANI */
         canvas {
             display: block;
             width: 100vw;
@@ -33,7 +32,6 @@
         }
         canvas:active { cursor: grabbing; }
 
-        /* YÜZEN PANELLER (OVERLAY UI) */
         .top-bar {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 1100px;
@@ -93,10 +91,8 @@
 </head>
 <body>
 
-    <!-- CANVAS HARİTA -->
     <canvas id="gameMap"></canvas>
 
-    <!-- ÜST BİLGİ BARI -->
     <div class="top-bar">
         <div class="stats-group">
             <div class="stat-box"><span>Ülke</span><span id="stat-name">Türkiye</span></div>
@@ -111,7 +107,6 @@
         </div>
     </div>
 
-    <!-- SOL YÜZEN PANEL -->
     <div class="left-overlay">
         <div class="panel-card">
             <h3 id="selected-country-title" style="color:var(--accent); font-size:1rem;">Hedef: ABD</h3>
@@ -131,7 +126,6 @@
         </div>
     </div>
 
-    <!-- SAĞ YÜZEN PANEL -->
     <div class="right-overlay">
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">💬 Lider Diplomatik Hattı</h4>
@@ -147,7 +141,7 @@
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
             <div class="news-feed" id="news-feed">
-                <div class="news-item">Strateji oyununun klasik pastel renk paleti haritaya uyarlandı.</div>
+                <div class="news-item">Afrika pembe renklerden arındırıldı, komşu çakışmaları (İran/Azerbaycan) giderildi.</div>
             </div>
         </div>
     </div>
@@ -168,27 +162,54 @@
             "İran": { name: "İran", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
         };
 
-        // Ekrandaki klasik strateji oyunu estetiğine uygun mat/pastel renk paleti (Komşu çakışmaları önlenecek şekilde)
+        // Genişletilmiş ve Optimize Edilmiş Strateji Renk Paleti (Komşu çakışmaları ve pembe Afrika hatası giderildi)
         const strategyPalette = {
-            "Russia": "#3d5b43",         // Mat Koyu Zeytin Yeşili (Rusya tarzı)
-            "Canada": "#b2532a",         // Toprak Kiremit / Turuncu Tonu
-            "United States of America": "#498491", // Soluk Pastel Deniz Mavisi
+            // Büyük Güçler ve Kritik Sınırlar
+            "Russia": "#3d5b43",          // Koyu Zeytin Yeşili
+            "Canada": "#b2532a",          // Kiremit / Turuncu
+            "United States of America": "#498491", // Soluk Deniz Mavisi
             "United States": "#498491",
-            "China": "#a83232",          // Mat Kızıl / Kırmızı
-            "Brazil": "#5b7531",         // Doğa Yeşili
-            "Greenland": "#58615e",      // Mat Gri
-            "Australia": "#45734e",      // Koyu Yeşil
-            "India": "#b87d3b",          // Hardal / Kahve Tonu
-            "Argentina": "#50858c",      // Soluk Turkuaz/Mavi
-            "Kazakhstan": "#3f7a6f",     // Koyu Su Yeşili
-            "Iran": "#8c6239",           // Kahve Tonu
-            "Germany": "#705b41",        // Mat Kahve
-            "United Kingdom": "#59416b", // Soluk Mor/Lacivert
-            "France": "#3b6e8c",         // Mat Mavi
-            "Turkey": "#2d6a4f",         // Oyuncu/Ülke Yeşili
+            "China": "#a83232",           // Mat Kızıl
+            "Brazil": "#5b7531",          // Doğa Yeşili
+            "Greenland": "#58615e",       // Gri
+            "Australia": "#45734e",       // Koyu Yeşil
+            "India": "#b87d3b",           // Hardal
+            "Argentina": "#50858c",       // Soluk Turkuaz
+            "Kazakhstan": "#3f7a6f",      // Su Yeşili
+            
+            // İstediğin Gibi İran (Turuncumsu/Kahve tonu) ve Azerbaycan (Açık/Farklı Yeşil) ayrımı
+            "Iran": "#bf6934",            // Belirgin Turuncumsu Toprak Tonu
+            "Azerbaijan": "#6aa84f",      // Açık / Canlı Strateji Yeşili
+            
+            "Germany": "#705b41",         // Mat Kahve
+            "United Kingdom": "#59416b",  // Soluk Mor
+            "France": "#3b6e8c",          // Mat Mavi
+            "Turkey": "#2d6a4f",          // Oyuncu Yeşili
             "Spain": "#a64438",
             "Italy": "#467354",
-            "Japan": "#9e3853"
+            "Japan": "#9e3853",
+            "Greece": "#357982",
+            
+            // Afrika Ülkeleri İçin Gerçekçi Mat Toprak, Hardal, Zeytin ve Kum Tonları (Pembe hatası ortadan kalktı)
+            "Egypt": "#c29b38",           // Mat Kum / Hardal Sarısı
+            "Libya": "#a37034",           // Toprak Sarısı
+            "Algeria": "#5e7340",         // Zeytin Yeşili
+            "Sudan": "#8c4a32",           // Kiremit / Kahverengi
+            "Chad": "#735c3c",            // Mat Kahve
+            "Mali": "#b5844b",            // Soluk Toprak
+            "Niger": "#c49a45",           // Hardal
+            "Mauritania": "#61704e",      // Koyu Soluk Yeşil
+            "Nigeria": "#486e40",         // Çim Yeşili
+            "Ethiopia": "#7a4334",        // Kırmızımsı Kahve
+            "Somalia": "#3c6e75",         // Petrol Mavisi
+            "Democratic Republic of the Congo": "#336633", // Orman Yeşili
+            "Congo": "#4d7358",
+            "South Africa": "#705135",    // Kahverengi
+            "Angola": "#854138",          // Mat Kırmızı/Kahve
+            "Morocco": "#a35437",         // Toprak Turuncusu
+            "Tanzania": "#527346",
+            "Kenya": "#825d36",
+            "Madagascar": "#496e5d"
         };
 
         const nameMapping = {
@@ -268,7 +289,7 @@
             }
         });
 
-        // Listede özel rengi olmayan ülkeler için ekran görüntüsündeki palete uygun uyumlu mat ton üretici
+        // Haritada özel tanımı olmayan diğer küçük ülkeler için pembe/mor yerine uyumlu mat toprak tonu üreteci
         function getStrategyColor(engName) {
             if (strategyPalette[engName]) return strategyPalette[engName];
             let hash = 0;
@@ -276,7 +297,9 @@
                 hash = engName.charCodeAt(i) + ((hash << 5) - hash);
             }
             const h = Math.abs(hash) % 360;
-            return `hsl(${h}, 35%, 36%)`; // Daha mat ve soluk tonlar
+            // Tonu kırmızı/pembe alanlardan (300-360 ve 0-20 derece) uzaklaştırıp toprak ve zeytin tonlarına (30-160 derece) sabitliyoruz
+            const safeH = (h % 130) + 25; 
+            return `hsl(${safeH}, 32%, 35%)`;
         }
 
         d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
@@ -292,7 +315,6 @@
         function renderMap() {
             context.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Ekran görüntüsündeki derin, koyu okyanus rengi
             const oceanColor = getComputedStyle(document.documentElement).getPropertyValue('--ocean-color').trim() || '#091322';
             context.fillStyle = oceanColor;
             context.fillRect(0, 0, canvas.width, canvas.height);
@@ -311,18 +333,16 @@
                     const engName = feature.properties.NAME;
                     const gameName = nameMapping[engName];
 
-                    // Klasik strateji oyunu mat/pastel renk dolgusu
                     let fillColor = getStrategyColor(engName);
-                    let strokeColor = '#04080f'; // Sınırları net ayıran koyu hatlar
+                    let strokeColor = '#04080f'; 
                     let lineWidth = 1.0 / currentTransform.k;
 
-                    // Oyuncu ve Hedef Ülke Vurguları
                     if (gameName === playerCountry) {
-                        fillColor = '#1e7e34'; // Canlı Oyuncu Yeşili
+                        fillColor = '#1e7e34'; 
                         strokeColor = '#57cc99';
                         lineWidth = 2.2 / currentTransform.k;
                     } else if (gameName === selectedTarget) {
-                        fillColor = '#c92a2a'; // Seçilen Hedef Kırmızısı
+                        fillColor = '#c92a2a'; 
                         strokeColor = '#ff6b6b';
                         lineWidth = 2.2 / currentTransform.k;
                     }
