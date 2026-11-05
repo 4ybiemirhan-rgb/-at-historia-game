@@ -3,74 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pax Historia Style - Vector Map Strategy</title>
+    <title>Pax Historia Style - Zoomable Map Strategy</title>
     <style>
         :root {
-            --sea-color: #0d1b2a;
-            --panel-bg: rgba(15, 23, 42, 0.88);
+            --bg-color: #0b1120;
+            --panel-bg: rgba(30, 41, 59, 0.88);
             --panel-border: rgba(51, 65, 85, 0.7);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent: #3b82f6;
             --danger: #ef4444;
             --success: #22c55e;
-            
-            /* Ülke Renkleri */
-            --land-default: #334155;
-            --land-hover: #475569;
-            --land-player: #15803d;
-            --land-selected: #b91c1c;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: var(--sea-color); color: var(--text-main); }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #070d19; color: var(--text-main); }
 
-        /* TAM EKRAN VEKTÖR HARİTA */
+        /* YAKINLAŞTIRILABİLİR HARİTA ALANI (ZOOM & PAN CONTAINER) */
         .map-viewport {
             position: absolute;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: var(--sea-color);
+            overflow: hidden;
+            background: #0d1b2a;
+            cursor: grab;
             z-index: 1;
         }
+        .map-viewport:active { cursor: grabbing; }
 
-        svg#world-map {
-            width: 100%;
-            height: 100%;
+        #map-container {
+            position: absolute;
+            width: 1000px;
+            height: 500px;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: url('world-map.png') no-repeat center center;
+            background-size: contain;
+            transform-origin: center center;
+            transition: transform 0.05s ease-out;
         }
 
-        /* Saf Vektör Ülke Çizimleri */
-        .country-shape {
-            fill: var(--land-default);
-            stroke: #1e293b;
-            stroke-width: 1.5;
-            cursor: pointer;
-            transition: all 0.25s ease;
+        /* ÜLKE ETKİLEŞİM NOKTALARI (PİNLER) */
+        .country-pin {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex; flex-direction: column; align-items: center;
+            cursor: pointer; z-index: 5;
         }
 
-        .country-shape:hover {
-            fill: var(--land-hover);
-            stroke: #38bdf8;
-            stroke-width: 2;
-            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.5));
+        .pin-dot {
+            width: 14px; height: 14px;
+            background-color: #64748b;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
         }
 
-        .country-shape.player-country {
-            fill: var(--land-player);
-            stroke: #4ade80;
-            stroke-width: 2.5;
+        .country-pin:hover .pin-dot {
+            transform: scale(1.3);
+            background-color: var(--accent);
         }
 
-        .country-shape.selected-country {
-            fill: var(--land-selected);
-            stroke: #f87171;
-            stroke-width: 2.5;
+        .country-pin.player-pin .pin-dot {
+            background-color: var(--success);
+            width: 16px; height: 16px;
+        }
+
+        .country-pin.selected-pin .pin-dot {
+            background-color: var(--danger);
+            width: 16px; height: 16px;
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .pin-label {
+            margin-top: 3px;
+            background: rgba(15, 23, 42, 0.85);
+            color: white; padding: 2px 6px; border-radius: 4px;
+            font-size: 0.7rem; font-weight: bold;
+            border: 1px solid var(--panel-border);
+            white-space: nowrap;
+            pointer-events: none;
         }
 
         /* YÜZEN PANELLER (OVERLAY UI) */
         .top-bar {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 1100px;
-            background: var(--panel-bg); backdrop-filter: blur(10px);
+            background: var(--panel-bg); backdrop-filter: blur(8px);
             border: 1px solid var(--panel-border); border-radius: 12px;
             padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
             z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
@@ -82,8 +101,7 @@
         .stat-box span:last-child { font-size: 0.95rem; font-weight: bold; }
 
         .turn-box { display: flex; align-items: center; gap: 15px; }
-        .next-turn-btn { background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-        .next-turn-btn:hover { opacity: 0.9; }
+        .next-turn-btn { background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         .left-overlay {
             position: absolute; top: 85px; left: 20px; width: 310px;
@@ -91,13 +109,13 @@
         }
 
         .panel-card {
-            background: var(--panel-bg); backdrop-filter: blur(10px);
+            background: var(--panel-bg); backdrop-filter: blur(8px);
             border: 1px solid var(--panel-border); border-radius: 12px; padding: 15px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
 
         .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
-        .action-btn { background: rgba(51, 65, 85, 0.8); color: white; border: 1px solid var(--panel-border); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-align: left; transition: background 0.2s; }
+        .action-btn { background: rgba(51, 65, 85, 0.8); color: white; border: 1px solid var(--panel-border); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-align: left; }
         .action-btn:hover { background: var(--accent); }
 
         .country-select-list { max-height: 180px; overflow-y: auto; list-style: none; margin-top: 8px; }
@@ -124,47 +142,59 @@
 </head>
 <body>
 
-    <!-- SAF VEKTÖR TAM EKRAN HARİTA -->
-    <div class="map-viewport">
-        <svg id="world-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
-     <g id="vector-countries">
-                <!-- Türkiye -->
-                <path id="shape-Türkiye" class="country-shape player-country" d="M 525,215 L 535,212 L 550,210 L 565,212 L 570,220 L 560,228 L 545,230 L 530,228 L 522,222 Z" onclick="selectCountry('Türkiye')"><title>Türkiye</title></path>
-                
-                <!-- Yunanistan -->
-                <path id="shape-Yunanistan" class="country-shape" d="M 508,218 L 518,216 L 522,222 L 515,228 L 510,225 Z" onclick="selectCountry('Yunanistan')"><title>Yunanistan</title></path>
-                
-                <!-- ABD -->
-                <path id="shape-ABD" class="country-shape" d="M 130,130 L 200,125 L 280,120 L 285,150 L 275,210 L 250,220 L 210,215 L 170,225 L 145,190 L 135,160 Z" onclick="selectCountry('ABD')"><title>ABD</title></path>
-                
-                <!-- Çin -->
-                <path id="shape-Çin" class="country-shape" d="M 690,175 L 750,165 L 810,160 L 825,190 L 820,230 L 780,250 L 740,240 L 710,255 L 685,220 L 695,190 Z" onclick="selectCountry('Çin')"><title>Çin</title></path>
-                
-                <!-- Almanya -->
-                <path id="shape-Almanya" class="country-shape" d="M 472,168 L 490,166 L 492,185 L 475,188 L 468,178 Z" onclick="selectCountry('Almanya')"><title>Almanya</title></path>
-                
-                <!-- Rusya -->
-                <path id="shape-Rusya" class="country-shape" d="M 470,70 L 620,60 L 780,50 L 890,55 L 880,110 L 830,140 L 730,145 L 600,130 L 485,120 Z" onclick="selectCountry('Rusya')"><title>Rusya</title></path>
-                
-                <!-- İngiltere -->
-                <path id="shape-İngiltere" class="country-shape" d="M 442,152 L 458,150 L 455,168 L 440,168 Z" onclick="selectCountry('İngiltere')"><title>İngiltere</title></path>
-                
-                <!-- Fransa -->
-                <path id="shape-Fransa" class="country-shape" d="M 448,178 L 468,175 L 465,198 L 442,198 Z" onclick="selectCountry('Fransa')"><title>Fransa</title></path>
-                
-                <!-- Japonya -->
-                <path id="shape-Japonya" class="country-shape" d="M 852,195 L 868,190 L 875,225 L 860,230 Z" onclick="selectCountry('Japonya')"><title>Japonya</title></path>
-                
-                <!-- Brezilya -->
-                <path id="shape-Brezilya" class="country-shape" d="M 290,310 L 360,315 L 385,340 L 370,410 L 330,440 L 285,390 L 275,340 Z" onclick="selectCountry('Brezilya')"><title>Brezilya</title></path>
-                
-                <!-- Hindistan -->
-                <path id="shape-Hindistan" class="country-shape" d="M 655,225 L 695,220 L 705,250 L 685,295 L 665,290 L 642,250 Z" onclick="selectCountry('Hindistan')"><title>Hindistan</title></path>
-                
-                <!-- İran -->
-                <path id="shape-İran" class="country-shape" d="M 575,220 L 618,218 L 615,255 L 580,252 L 568,238 Z" onclick="selectCountry('İran')"><title>İran</title></path>
-            </g>
-        </svg>
+    <!-- YAKINLAŞTIRILABİLİR HARİTA ALANI -->
+    <div class="map-viewport" id="map-viewport">
+        <div id="map-container">
+            <!-- Ülke Pinleri (Harita üzerindeki koordinatları yüzdelik olarak ayarlanmıştır) -->
+            <div id="pin-Türkiye" class="country-pin" style="top: 45%; left: 54%;" onclick="selectCountry('Türkiye')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Türkiye</div>
+            </div>
+            <div id="pin-ABD" class="country-pin" style="top: 35%; left: 22%;" onclick="selectCountry('ABD')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">ABD</div>
+            </div>
+            <div id="pin-Çin" class="country-pin" style="top: 40%; left: 78%;" onclick="selectCountry('Çin')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Çin</div>
+            </div>
+            <div id="pin-Almanya" class="country-pin" style="top: 30%; left: 49%;" onclick="selectCountry('Almanya')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Almanya</div>
+            </div>
+            <div id="pin-Rusya" class="country-pin" style="top: 20%; left: 65%;" onclick="selectCountry('Rusya')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Rusya</div>
+            </div>
+            <div id="pin-İngiltere" class="country-pin" style="top: 28%; left: 45%;" onclick="selectCountry('İngiltere')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">İngiltere</div>
+            </div>
+            <div id="pin-Fransa" class="country-pin" style="top: 34%; left: 47%;" onclick="selectCountry('Fransa')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Fransa</div>
+            </div>
+            <div id="pin-Japonya" class="country-pin" style="top: 38%; left: 87%;" onclick="selectCountry('Japonya')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Japonya</div>
+            </div>
+            <div id="pin-Brezilya" class="country-pin" style="top: 70%; left: 32%;" onclick="selectCountry('Brezilya')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Brezilya</div>
+            </div>
+            <div id="pin-Hindistan" class="country-pin" style="top: 50%; left: 72%;" onclick="selectCountry('Hindistan')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Hindistan</div>
+            </div>
+            <div id="pin-Yunanistan" class="country-pin" style="top: 46%; left: 51%;" onclick="selectCountry('Yunanistan')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">Yunanistan</div>
+            </div>
+            <div id="pin-İran" class="country-pin" style="top: 48%; left: 61%;" onclick="selectCountry('İran')">
+                <div class="pin-dot"></div>
+                <div class="pin-label">İran</div>
+            </div>
+        </div>
     </div>
 
     <!-- ÜST BİLGİ BARI -->
@@ -186,7 +216,7 @@
     <div class="left-overlay">
         <div class="panel-card">
             <h3 id="selected-country-title" style="color:var(--accent); font-size:1rem;">Hedef: ABD</h3>
-            <p id="selected-country-desc" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Doğrudan haritadaki ülkelerin üzerine tıklayın.</p>
+            <p id="selected-country-desc" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Haritadaki ülke pinlerine tıklayın.</p>
             
             <div class="action-grid">
                 <button class="action-btn" onclick="doAction('alliance')">🤝 İttifak</button>
@@ -218,7 +248,7 @@
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
             <div class="news-feed" id="news-feed">
-                <div class="news-item">Saf Vektör harita mimarisi aktif edildi.</div>
+                <div class="news-item">Fare tekerleğiyle yakınlaştırma ve pin sistemi aktif edildi.</div>
             </div>
         </div>
     </div>
@@ -245,6 +275,49 @@
         let month = 1;
         const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
+        // ZOOM VE PAN (SÜRÜKLE & YAKINLAŞTIR) MANTIĞI
+        let scale = 1;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        const viewport = document.getElementById('map-viewport');
+        const container = document.getElementById('map-container');
+
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomIntensity = 0.1;
+            if (e.deltaY < 0) {
+                scale = Math.min(scale * (1 + zoomIntensity), 4); // Maksimum 4 kat yakınlaşma
+            } else {
+                scale = Math.max(scale * (1 - zoomIntensity), 1); // Minimum orijinal boyut
+            }
+            updateTransform();
+        });
+
+        viewport.addEventListener('mousedown', (e) => {
+            if(e.target.closest('.panel-card') || e.target.closest('.top-bar')) return;
+            isDragging = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        function updateTransform() {
+            container.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) scale(${scale})`;
+        }
+
         function init() {
             renderCountryList();
             updateMapHighlight();
@@ -267,14 +340,14 @@
 
         function updateMapHighlight() {
             for (let key in countries) {
-                const shape = document.getElementById(`shape-${key}`);
-                if (!shape) continue;
+                const pin = document.getElementById(`pin-${key}`);
+                if (!pin) continue;
 
-                shape.classList.remove('player-country', 'selected-country');
+                pin.classList.remove('player-pin', 'selected-pin');
                 if (key === playerCountry) {
-                    shape.classList.add('player-country');
+                    pin.classList.add('player-pin');
                 } else if (key === selectedTarget) {
-                    shape.classList.add('selected-country');
+                    pin.classList.add('selected-pin');
                 }
             }
         }
