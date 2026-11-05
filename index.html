@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pax Historia Style - Fullscreen Map Strategy</title>
+    <title>Pax Historia Style - Fullscreen Polygon Map Strategy</title>
     <style>
         :root {
             --bg-color: #0b1120;
@@ -14,55 +14,56 @@
             --accent: #3b82f6;
             --danger: #ef4444;
             --success: #22c55e;
+            --map-sea: #a5c9eb;
+            --map-land: #d9e2ec;
+            --map-stroke: #627d98;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; color: var(--text-main); }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: var(--map-sea); color: var(--text-main); }
 
-        /* ANA EKRAN - TAM EKRAN HARİTA */
+        /* ANA EKRAN - SVG TAM SINIR HARİTASI */
         .map-viewport {
             position: absolute;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: url('world-map.png') no-repeat center center;
-            background-size: cover;
-            background-color: #070d19;
+            display: flex; justify-content: center; align-items: center;
             z-index: 1;
         }
 
-        .map-marker {
-            position: absolute;
-            transform: translate(-50%, -50%);
+        svg#world-map {
+            width: 100%;
+            height: 100%;
+            background-color: var(--map-sea);
+        }
+
+        /* Ülke Sınırı Poligon Stilleri */
+        path.country-shape {
+            fill: var(--map-land);
+            stroke: var(--map-stroke);
+            stroke-width: 1;
             cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 2;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
-        .map-marker .pin {
-            width: 16px; height: 16px;
-            border-radius: 50%;
-            background: #3b82f6;
-            border: 2px solid #fff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+        path.country-shape:hover {
+            fill: #9fb3c8;
+            stroke: #102a43;
+            stroke-width: 1.5;
         }
 
-        .map-marker:hover .pin { transform: scale(1.3); background: #60a5fa; }
-        .map-marker.player .pin { background: #22c55e; width: 20px; height: 20px; box-shadow: 0 0 12px #22c55e; }
-        .map-marker.active .pin { background: #ef4444; width: 20px; height: 20px; box-shadow: 0 0 12px #ef4444; }
+        path.country-shape.player-country {
+            fill: #86efac;
+            stroke: #15803d;
+            stroke-width: 2;
+        }
 
-        .map-marker .label {
-            font-size: 11px; font-weight: bold; color: #fff;
-            background: rgba(15, 23, 42, 0.9);
-            padding: 2px 8px; border-radius: 4px; margin-top: 4px;
-            border: 1px solid var(--panel-border);
-            white-space: nowrap; pointer-events: none;
+        path.country-shape.selected-country {
+            fill: #fca5a5;
+            stroke: #b91c1c;
+            stroke-width: 2;
         }
 
         /* YÜZEN PANELLER (OVERLAY UI) */
-        
-        /* 1. ÜST BİLGİ VE TUR ÇUBUĞU */
         .top-bar {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 1100px;
@@ -80,7 +81,6 @@
         .turn-box { display: flex; align-items: center; gap: 15px; }
         .next-turn-btn { background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* 2. SOL PANEL - ÜLKE SEÇİMİ VE EYLEMLER */
         .left-overlay {
             position: absolute; top: 85px; left: 20px; width: 310px;
             display: flex; flex-direction: column; gap: 12px; z-index: 10;
@@ -100,7 +100,6 @@
         .country-select-item { padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between; cursor: pointer; font-size: 0.85rem; margin-bottom: 4px; background: rgba(255,255,255,0.03); }
         .country-select-item:hover, .country-select-item.active { background: rgba(59, 130, 246, 0.3); }
 
-        /* 3. SAĞ PANEL - DİPLOMASİ CHAT VE HABERLER */
         .right-overlay {
             position: absolute; top: 85px; right: 20px; width: 320px;
             display: flex; flex-direction: column; gap: 12px; z-index: 10;
@@ -121,9 +120,37 @@
 </head>
 <body>
 
-    <!-- TAM EKRAN HARİTA -->
-    <div class="map-viewport" id="map-viewport">
-        <div id="marker-container"></div>
+    <!-- TAM EKRAN SINIR HARİTASI (SVG) -->
+    <div class="map-viewport">
+        <svg id="world-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid slice">
+            <!-- Ülke Sınır Poligonları -->
+            <g id="country-shapes">
+                <!-- Türkiye -->
+                <path id="path-Türkiye" class="country-shape player-country" d="M 550 145 L 590 142 L 600 155 L 560 160 Z" onclick="selectCountry('Türkiye')"><title>Türkiye</title></path>
+                <!-- ABD -->
+                <path id="path-ABD" class="country-shape" d="M 150 100 L 270 95 L 260 180 L 170 170 Z" onclick="selectCountry('ABD')"><title>ABD</title></path>
+                <!-- Çin -->
+                <path id="path-Çin" class="country-shape" d="M 720 130 L 830 120 L 840 210 L 740 210 Z" onclick="selectCountry('Çin')"><title>Çin</title></path>
+                <!-- Almanya -->
+                <path id="path-Almanya" class="country-shape" d="M 500 100 L 520 98 L 522 118 L 502 120 Z" onclick="selectCountry('Almanya')"><title>Almanya</title></path>
+                <!-- Rusya -->
+                <path id="path-Rusya" class="country-shape" d="M 530 50 L 900 40 L 880 120 L 540 100 Z" onclick="selectCountry('Rusya')"><title>Rusya</title></path>
+                <!-- İngiltere -->
+                <path id="path-İngiltere" class="country-shape" d="M 460 85 L 478 82 L 475 105 L 458 105 Z" onclick="selectCountry('İngiltere')"><title>İngiltere</title></path>
+                <!-- Fransa -->
+                <path id="path-Fransa" class="country-shape" d="M 475 110 L 498 108 L 495 130 L 472 130 Z" onclick="selectCountry('Fransa')"><title>Fransa</title></path>
+                <!-- Japonya -->
+                <path id="path-Japonya" class="country-shape" d="M 865 135 L 880 130 L 885 175 L 870 175 Z" onclick="selectCountry('Japonya')"><title>Japonya</title></path>
+                <!-- Brezilya -->
+                <path id="path-Brezilya" class="country-shape" d="M 290 270 L 370 280 L 340 390 L 280 340 Z" onclick="selectCountry('Brezilya')"><title>Brezilya</title></path>
+                <!-- Hindistan -->
+                <path id="path-Hindistan" class="country-shape" d="M 690 180 L 740 175 L 725 245 L 685 210 Z" onclick="selectCountry('Hindistan')"><title>Hindistan</title></path>
+                <!-- Yunanistan -->
+                <path id="path-Yunanistan" class="country-shape" d="M 535 145 L 548 144 L 546 158 L 533 158 Z" onclick="selectCountry('Yunanistan')"><title>Yunanistan</title></path>
+                <!-- İran -->
+                <path id="path-İran" class="country-shape" d="M 605 155 L 650 152 L 645 190 L 602 185 Z" onclick="selectCountry('İran')"><title>İran</title></path>
+            </g>
+        </svg>
     </div>
 
     <!-- ÜST BİLGİ BARI -->
@@ -145,7 +172,7 @@
     <div class="left-overlay">
         <div class="panel-card">
             <h3 id="selected-country-title" style="color:var(--accent); font-size:1rem;">Hedef: ABD</h3>
-            <p id="selected-country-desc" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Haritadan ülkelere tıklayarak seçim yapın.</p>
+            <p id="selected-country-desc" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Haritadan doğrudan ülkenin sınırlarına tıklayın.</p>
             
             <div class="action-grid">
                 <button class="action-btn" onclick="doAction('alliance')">🤝 İttifak</button>
@@ -177,25 +204,25 @@
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
             <div class="news-feed" id="news-feed">
-                <div class="news-item">Pax Historia tarzı tam ekran harita arayüzü aktif edildi.</div>
+                <div class="news-item">Doğrudan ülke sınırına tıklamalı harita sistemi aktif.</div>
             </div>
         </div>
     </div>
 
     <script>
         const countries = {
-            "Türkiye": { name: "Türkiye", top: "38%", left: "58%", money: 120, pop: 85, army: 750, stability: 85, relation: 50 },
-            "ABD": { name: "ABD", top: "35%", left: "22%", money: 850, pop: 335, army: 2100, stability: 90, relation: 60 },
-            "Çin": { name: "Çin", top: "38%", left: "78%", money: 720, pop: 1410, army: 2500, stability: 92, relation: 40 },
-            "Almanya": { name: "Almanya", top: "27%", left: "50%", money: 450, pop: 84, army: 180, stability: 95, relation: 70 },
-            "Rusya": { name: "Rusya", top: "20%", left: "70%", money: 380, pop: 144, army: 1300, stability: 78, relation: 30 },
-            "İngiltere": { name: "İngiltere", top: "24%", left: "46%", money: 330, pop: 67, army: 150, stability: 91, relation: 65 },
-            "Fransa": { name: "Fransa", top: "30%", left: "48%", money: 310, pop: 68, army: 200, stability: 88, relation: 60 },
-            "Japonya": { name: "Japonya", top: "36%", left: "87%", money: 500, pop: 125, army: 250, stability: 96, relation: 65 },
-            "Brezilya": { name: "Brezilya", top: "68%", left: "34%", money: 190, pop: 215, army: 360, stability: 80, relation: 55 },
-            "Hindistan": { name: "Hindistan", top: "46%", left: "71%", money: 350, pop: 1420, army: 3000, stability: 82, relation: 50 },
-            "Yunanistan": { name: "Yunanistan", top: "37%", left: "54%", money: 45, pop: 10, army: 120, stability: 85, relation: 25 },
-            "İran": { name: "İran", top: "41%", left: "63%", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
+            "Türkiye": { name: "Türkiye", money: 120, pop: 85, army: 750, stability: 85, relation: 50 },
+            "ABD": { name: "ABD", money: 850, pop: 335, army: 2100, stability: 90, relation: 60 },
+            "Çin": { name: "Çin", money: 720, pop: 1410, army: 2500, stability: 92, relation: 40 },
+            "Almanya": { name: "Almanya", money: 450, pop: 84, army: 180, stability: 95, relation: 70 },
+            "Rusya": { name: "Rusya", money: 380, pop: 144, army: 1300, stability: 78, relation: 30 },
+            "İngiltere": { name: "İngiltere", money: 330, pop: 67, army: 150, stability: 91, relation: 65 },
+            "Fransa": { name: "Fransa", money: 310, pop: 68, army: 200, stability: 88, relation: 60 },
+            "Japonya": { name: "Japonya", money: 500, pop: 125, army: 250, stability: 96, relation: 65 },
+            "Brezilya": { name: "Brezilya", money: 190, pop: 215, army: 360, stability: 80, relation: 55 },
+            "Hindistan": { name: "Hindistan", money: 350, pop: 1420, army: 3000, stability: 82, relation: 50 },
+            "Yunanistan": { name: "Yunanistan", money: 45, pop: 10, army: 120, stability: 85, relation: 25 },
+            "İran": { name: "İran", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
         };
 
         let playerCountry = "Türkiye";
@@ -206,7 +233,7 @@
 
         function init() {
             renderCountryList();
-            renderMapMarkers();
+            updateMapHighlight();
             updatePlayerStats();
             updateTargetInfo();
         }
@@ -224,27 +251,18 @@
             }
         }
 
-        function renderMapMarkers() {
-            const container = document.getElementById("marker-container");
-            container.innerHTML = "";
-
+        function updateMapHighlight() {
+            // Tüm ülke yollarını sıfırla/güncelle
             for (let key in countries) {
-                const c = countries[key];
-                const isPlayer = key === playerCountry;
-                const isSelected = key === selectedTarget;
+                const path = document.getElementById(`path-${key}`);
+                if (!path) continue;
 
-                const marker = document.createElement("div");
-                marker.className = `map-marker ${isPlayer ? 'player' : ''} ${isSelected ? 'active' : ''}`;
-                marker.style.top = c.top;
-                marker.style.left = c.left;
-                marker.onclick = () => selectCountry(key);
-
-                marker.innerHTML = `
-                    <div class="pin"></div>
-                    <div class="label">${c.name}</div>
-                `;
-
-                container.appendChild(marker);
+                path.classList.remove('player-country', 'selected-country');
+                if (key === playerCountry) {
+                    path.classList.add('player-country');
+                } else if (key === selectedTarget) {
+                    path.classList.add('selected-country');
+                }
             }
         }
 
@@ -252,7 +270,7 @@
             if (key === playerCountry) return;
             selectedTarget = key;
             renderCountryList();
-            renderMapMarkers();
+            updateMapHighlight();
             updateTargetInfo();
         }
 
@@ -316,7 +334,7 @@
             updatePlayerStats();
             updateTargetInfo();
             renderCountryList();
-            renderMapMarkers();
+            updateMapHighlight();
         }
 
         function sendDiplomacy() {
