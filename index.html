@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pax Historia Style - Vector Canvas Strategy Game</title>
+    <title>Pax Historia Style - Colored Strategy Map</title>
     <style>
         :root {
             --bg-color: #0b1329;
@@ -15,13 +15,9 @@
             --danger: #ef4444;
             --success: #22c55e;
             
-            /* Strateji Haritası Renkleri */
             --ocean-color: #0b1329;
-            --land-default: #1e3a5f;
-            --land-hover: #2563eb;
             --land-player: #15803d;    /* Oyuncu Ülkesi (Yeşil) */
             --land-selected: #b91c1c;  /* Seçilen Hedef (Kırmızı) */
-            --border-color: #3b82f6;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -94,12 +90,12 @@
         .news-feed { max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; }
         .news-item { padding: 6px 8px; background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent); border-radius: 4px; }
     </style>
-    <!-- Harita motoru için D3.js Kütüphanesi -->
+    <!-- D3.js Kütüphanesi -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
 
-    <!-- VEKTÖREL CANVAS HARİTA -->
+    <!-- CANVAS HARİTA -->
     <canvas id="gameMap"></canvas>
 
     <!-- ÜST BİLGİ BARI -->
@@ -153,13 +149,12 @@
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
             <div class="news-feed" id="news-feed">
-                <div class="news-item">Sonsuz Vektörel Harita Motoru aktif edildi.</div>
+                <div class="news-item">Sınırlar belirginleştirildi ve renkli ülke paleti aktif edildi.</div>
             </div>
         </div>
     </div>
 
     <script>
-        // Oyun Ülke Verileri
         const countries = {
             "Türkiye": { name: "Türkiye", money: 120, pop: 85, army: 750, stability: 85, relation: 50 },
             "ABD": { name: "ABD", money: 850, pop: 335, army: 2100, stability: 90, relation: 60 },
@@ -175,7 +170,22 @@
             "İran": { name: "İran", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
         };
 
-        // GeoJSON İngilizce isimlerini oyun Türkçe isimlerine eşleştirme tablosu
+        // Ülkelere özel karakteristik renkler (Strateji oyunu paleti)
+        const countryColors = {
+            "Türkiye": "#15803d",
+            "ABD": "#1d4ed8",
+            "Çin": "#b91c1c",
+            "Almanya": "#b45309",
+            "Rusya": "#7c2d12",
+            "İngiltere": "#6d28d9",
+            "Fransa": "#0284c7",
+            "Japonya": "#be185d",
+            "Brezilya": "#15803d",
+            "Hindistan": "#c2410c",
+            "Yunanistan": "#0d9488",
+            "İran": "#4d7c0f"
+        };
+
         const nameMapping = {
             "Turkey": "Türkiye",
             "United States of America": "ABD",
@@ -198,7 +208,6 @@
         let month = 1;
         const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-        // CANVAS VE D3 HARİTA MOTORU AYARLARI
         const canvas = document.getElementById('gameMap');
         const context = canvas.getContext('2d');
 
@@ -233,18 +242,15 @@
 
         d3.select(canvas).call(zoomBehavior);
 
-        // Haritaya tıklandığında hangi ülkenin seçildiğini bulma
         canvas.addEventListener('click', (event) => {
             if (!worldGeoJSON) return;
             const rect = canvas.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const clickY = event.clientY - rect.top;
 
-            // Tıklanan piksel koordinatını coğrafi koordinata (Boylam, Enlem) çevir
             const coords = projection.invert([clickX, clickY]);
             if (!coords) return;
 
-            // Hangi ülke özelliğinin bu koordinatı içerdiğini bul
             for (let feature of worldGeoJSON.features) {
                 if (d3.geoContains(feature, coords)) {
                     const engName = feature.properties.NAME;
@@ -257,7 +263,6 @@
             }
         });
 
-        // Dünya Ülkeleri GeoJSON Verisini Yükleme
         d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
             .then(data => {
                 worldGeoJSON = data;
@@ -277,7 +282,7 @@
 
             const currentScale = projection.scale();
             const mapWidth = currentScale * 2 * Math.PI; 
-            const loops = [-1, 0, 1]; // Sonsuz yatay döngü için 3 kopya
+            const loops = [-1, 0, 1];
 
             loops.forEach(loopIndex => {
                 context.save();
@@ -287,19 +292,25 @@
                     const engName = feature.properties.NAME;
                     const gameName = nameMapping[engName];
 
-                    // Ülke Renk Belirleme
-                    let fillColor = '#1e3a5f'; // Diğer ülkeler (varsayılan)
-                    let strokeColor = '#334155';
-                    let lineWidth = 0.8 / currentTransform.k;
+                    // Varsayılan stil (diğer ülkeler için nötr ton)
+                    let fillColor = '#1e293b'; 
+                    let strokeColor = '#0b1329'; // Sınırları belirginleştiren koyu hat
+                    let lineWidth = 1.2 / currentTransform.k; // Sınır kalınlığı artırıldı
 
+                    // Ülkeye özel renk ataması
+                    if (gameName && countryColors[gameName]) {
+                        fillColor = countryColors[gameName];
+                    }
+
+                    // Oyuncu ve Hedef öncelikli renklendirme
                     if (gameName === playerCountry) {
                         fillColor = '#15803d'; // Oyuncu (Yeşil)
                         strokeColor = '#4ade80';
-                        lineWidth = 1.5 / currentTransform.k;
+                        lineWidth = 2.0 / currentTransform.k;
                     } else if (gameName === selectedTarget) {
                         fillColor = '#b91c1c'; // Seçilen Hedef (Kırmızı)
                         strokeColor = '#f87171';
-                        lineWidth = 1.5 / currentTransform.k;
+                        lineWidth = 2.0 / currentTransform.k;
                     }
 
                     context.beginPath();
@@ -315,7 +326,6 @@
             });
         }
 
-        // OYUN ARAYÜZ VE TUR FONKSİYONLARI
         function init() {
             renderCountryList();
             updatePlayerStats();
@@ -340,7 +350,7 @@
             selectedTarget = key;
             renderCountryList();
             updateTargetInfo();
-            renderMap(); // Haritayı yeniden çizerek renk değişimini anında göster
+            renderMap();
         }
 
         function updatePlayerStats() {
