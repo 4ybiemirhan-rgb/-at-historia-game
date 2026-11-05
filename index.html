@@ -82,4 +82,274 @@
         }
 
         .map-marker.player .pin {
-            background-color: #22c55
+            background-color: #22c55e;
+            width: 16px;
+            height: 16px;
+        }
+
+        .map-marker.active .pin {
+            background-color: #ef4444;
+            width: 16px;
+            height: 16px;
+            box-shadow: 0 0 12px #ef4444;
+        }
+
+        .map-marker .label {
+            font-size: 10px;
+            font-weight: bold;
+            color: #ffffff;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 2px;
+            white-space: nowrap;
+            pointer-events: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; }
+        .card h3 { margin-bottom: 8px; font-size: 0.95rem; color: var(--accent); }
+
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
+        .action-btn { background: #334155; color: white; border: none; padding: 7px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 0.8rem; transition: background 0.2s; }
+        .action-btn:hover { background: #475569; }
+
+        .news-feed { padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; }
+        .news-item { padding: 6px; background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent); border-radius: 4px; }
+        
+        .chat-box { height: 80px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; font-size: 0.8rem; }
+        .chat-msg { padding: 4px 6px; border-radius: 6px; max-width: 80%; }
+        .chat-msg.player { background: var(--accent); align-self: flex-end; }
+        .chat-msg.ai { background: #334155; align-self: flex-start; }
+        .chat-input-area { display: flex; gap: 6px; }
+        .chat-input { flex: 1; background: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 5px; color: white; font-size: 0.8rem; }
+        .send-btn { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="game-title">🌍 Modern Çağ Simülasyonu - Dünya Haritası</div>
+        <div class="turn-display">
+            <span id="current-date">Yıl: 2026 | Ay: Ocak</span>
+            <button class="next-turn-btn" onclick="nextTurn()">Turu Bitir ➡️</button>
+        </div>
+    </header>
+
+    <div class="country-stats">
+        <div class="stat-item"><span class="stat-label">Yönetilen Ülke</span><span class="stat-value" id="stat-name">Türkiye</span></div>
+        <div class="stat-item"><span class="stat-label">Bütçe</span><span class="stat-value" id="stat-money">120 Milyar $</span></div>
+        <div class="stat-item"><span class="stat-label">Nüfus</span><span class="stat-value" id="stat-pop">85 Milyon</span></div>
+        <div class="stat-item"><span class="stat-label">Askeri Güç</span><span class="stat-value" id="stat-army">750,000</span></div>
+        <div class="stat-item"><span class="stat-label">İstikrar</span><span class="stat-value" id="stat-stability">%85</span></div>
+    </div>
+
+    <div class="main-container">
+        <!-- Sol Panel -->
+        <div class="sidebar">
+            <div class="panel-header">Dünya Devletleri</div>
+            <ul class="country-list" id="country-list"></ul>
+        </div>
+
+        <!-- Orta Panel: Gerçek Görselli Harita -->
+        <div class="center-content">
+            <div class="map-card">
+                <h3>🗺️ Gerçek Sınırlarıyla Dünya Haritası</h3>
+                <div class="map-wrapper" id="map-container">
+                    <!-- Ülke Etiketleri Buraya Yerleşecek -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 id="selected-country-title">Seçilen Ülke: ABD</h3>
+                <p id="selected-country-desc" style="font-size: 0.8rem;">Haritadaki ülkelere dokunarak seçim yapabilirsiniz.</p>
+                <div class="action-grid">
+                    <button class="action-btn" onclick="doAction('alliance')">🤝 İttifak Teklif Et</button>
+                    <button class="action-btn" onclick="doAction('trade')">📦 Ticaret Anlaşması</button>
+                    <button class="action-btn" onclick="doAction('aid')">💰 Finansal Yardım</button>
+                    <button class="action-btn" onclick="doAction('war')" style="border-left: 3px solid var(--danger);">⚔️ Savaş İlan Et</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>💬 Diplomatik Hat</h3>
+                <div class="chat-box" id="chat-box">
+                    <div class="chat-msg ai">İyi günler. İlişkilerimizi önemsiyoruz.</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="Mesaj yazın...">
+                    <button class="send-btn" onclick="sendDiplomacy()">Gönder</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Panel -->
+        <div class="right-panel">
+            <div class="panel-header">Haberler ve Olay Günlüğü</div>
+            <div class="news-feed" id="news-feed">
+                <div class="news-item">Gerçek dünya haritası ve harita işaretleyicileri yüklendi.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Harita Konum Yüzdeleri (x: sol mesafe %, y: üst mesafe %)
+        const countries = {
+            "Türkiye": { name: "Türkiye", top: "38%", left: "58%", money: 120, pop: 85, army: 750, stability: 85, relation: 50 },
+            "ABD": { name: "ABD", top: "35%", left: "22%", money: 850, pop: 335, army: 2100, stability: 90, relation: 60 },
+            "Çin": { name: "Çin", top: "38%", left: "78%", money: 720, pop: 1410, army: 2500, stability: 92, relation: 40 },
+            "Almanya": { name: "Almanya", top: "27%", left: "50%", money: 450, pop: 84, army: 180, stability: 95, relation: 70 },
+            "Rusya": { name: "Rusya", top: "20%", left: "70%", money: 380, pop: 144, army: 1300, stability: 78, relation: 30 },
+            "İngiltere": { name: "İngiltere", top: "24%", left: "46%", money: 330, pop: 67, army: 150, stability: 91, relation: 65 },
+            "Fransa": { name: "Fransa", top: "30%", left: "48%", money: 310, pop: 68, army: 200, stability: 88, relation: 60 },
+            "Japonya": { name: "Japonya", top: "36%", left: "87%", money: 500, pop: 125, army: 250, stability: 96, relation: 65 },
+            "Brezilya": { name: "Brezilya", top: "68%", left: "34%", money: 190, pop: 215, army: 360, stability: 80, relation: 55 },
+            "Hindistan": { name: "Hindistan", top: "46%", left: "71%", money: 350, pop: 1420, army: 3000, stability: 82, relation: 50 },
+            "Yunanistan": { name: "Yunanistan", top: "37%", left: "54%", money: 45, pop: 10, army: 120, stability: 85, relation: 25 },
+            "İran": { name: "İran", top: "41%", left: "63%", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
+        };
+
+        let playerCountry = "Türkiye";
+        let selectedTarget = "ABD";
+        let year = 2026;
+        let month = 1;
+        const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+
+        function init() {
+            renderCountryList();
+            renderMapMarkers();
+            updatePlayerStats();
+            updateTargetInfo();
+        }
+
+        function renderCountryList() {
+            const list = document.getElementById("country-list");
+            list.innerHTML = "";
+            for (let key in countries) {
+                if (key === playerCountry) continue;
+                const li = document.createElement("li");
+                li.className = `country-item ${key === selectedTarget ? 'active' : ''}`;
+                li.innerHTML = `<span>${countries[key].name}</span> <span style="font-size:0.75rem; color:var(--text-muted);">İlişki: ${countries[key].relation}</span>`;
+                li.onclick = () => selectCountry(key);
+                list.appendChild(li);
+            }
+        }
+
+        function renderMapMarkers() {
+            const container = document.getElementById("map-container");
+            container.innerHTML = "";
+
+            for (let key in countries) {
+                const c = countries[key];
+                const isPlayer = key === playerCountry;
+                const isSelected = key === selectedTarget;
+
+                const marker = document.createElement("div");
+                marker.className = `map-marker ${isPlayer ? 'player' : ''} ${isSelected ? 'active' : ''}`;
+                marker.style.top = c.top;
+                marker.style.left = c.left;
+                marker.onclick = () => selectCountry(key);
+
+                marker.innerHTML = `
+                    <div class="pin"></div>
+                    <div class="label">${c.name}</div>
+                `;
+
+                container.appendChild(marker);
+            }
+        }
+
+        function selectCountry(key) {
+            if (key === playerCountry) return;
+            selectedTarget = key;
+            renderCountryList();
+            renderMapMarkers();
+            updateTargetInfo();
+        }
+
+        function updatePlayerStats() {
+            const p = countries[playerCountry];
+            document.getElementById("stat-name").innerText = p.name;
+            document.getElementById("stat-money").innerText = p.money + " Milyar $";
+            document.getElementById("stat-pop").innerText = p.pop + " Milyon";
+            document.getElementById("stat-army").innerText = p.army.toLocaleString() + " Bin";
+            document.getElementById("stat-stability").innerText = "%" + p.stability;
+        }
+
+        function updateTargetInfo() {
+            const t = countries[selectedTarget];
+            document.getElementById("selected-country-title").innerText = `Seçilen Hedef: ${t.name}`;
+            document.getElementById("selected-country-desc").innerText = `${t.name} ile ilişkiler sürüyor. (İlişki: ${t.relation}/100)`;
+        }
+
+        function nextTurn() {
+            month++;
+            if (month > 12) {
+                month = 1;
+                year++;
+            }
+            document.getElementById("current-date").innerText = `Yıl: ${year} | Ay: ${months[month-1]}`;
+            countries[playerCountry].money += 4;
+            updatePlayerStats();
+            addNews(`Takvim ilerledi: ${months[month-1]} ${year}.`);
+        }
+
+        function addNews(text) {
+            const feed = document.getElementById("news-feed");
+            const item = document.createElement("div");
+            item.className = "news-item";
+            item.innerText = text;
+            feed.prepend(item);
+        }
+
+        function doAction(type) {
+            const t = countries[selectedTarget];
+            if (type === 'alliance') {
+                if (t.relation >= 60) {
+                    t.relation += 10;
+                    addNews(`🎉 ${t.name} ile ittifak imzalandı!`);
+                } else {
+                    addNews(`❌ ${t.name} ittifak teklifini reddetti.`);
+                }
+            } else if (type === 'trade') {
+                countries[playerCountry].money += 15;
+                addNews(`📦 ${t.name} ile ticaret yapıldı (+15 Milyar $).`);
+            } else if (type === 'aid') {
+                if (countries[playerCountry].money >= 10) {
+                    countries[playerCountry].money -= 10;
+                    t.relation += 15;
+                    addNews(`💰 ${t.name} ülkesine yardım gönderildi.`);
+                } else {
+                    addNews(`❌ Yeterli bütçe yok.`);
+                }
+            } else if (type === 'war') {
+                t.relation = 0;
+                countries[playerCountry].stability -= 10;
+                addNews(`⚔️ ${t.name} ülkesine savaş ilan edildi!`);
+            }
+            updatePlayerStats();
+            updateTargetInfo();
+            renderCountryList();
+            renderMapMarkers();
+        }
+
+        function sendDiplomacy() {
+            const input = document.getElementById("chat-input");
+            const val = input.value.trim();
+            if(!val) return;
+
+            const box = document.getElementById("chat-box");
+            box.innerHTML += `<div class="chat-msg player">${val}</div>`;
+            input.value = "";
+
+            setTimeout(() => {
+                box.innerHTML += `<div class="chat-msg ai">${countries[selectedTarget].name} lideri mesajınızı olumlu karşıladı.</div>`;
+                box.scrollTop = box.scrollHeight;
+            }, 800);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        init();
+    </script>
+</body>
+</html>
