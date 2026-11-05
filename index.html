@@ -141,7 +141,7 @@
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
             <div class="news-feed" id="news-feed">
-                <div class="news-item">Afrika pembe renklerden arındırıldı, komşu çakışmaları (İran/Azerbaycan) giderildi.</div>
+                <div class="news-item">Avrupa ve dünya ülkeleri gerçek bayrak renklerine göre yeniden renklendirildi.</div>
             </div>
         </div>
     </div>
@@ -162,54 +162,56 @@
             "İran": { name: "İran", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
         };
 
-        // Genişletilmiş ve Optimize Edilmiş Strateji Renk Paleti (Komşu çakışmaları ve pembe Afrika hatası giderildi)
-        const strategyPalette = {
-            // Büyük Güçler ve Kritik Sınırlar
-            "Russia": "#3d5b43",          // Koyu Zeytin Yeşili
-            "Canada": "#b2532a",          // Kiremit / Turuncu
-            "United States of America": "#498491", // Soluk Deniz Mavisi
-            "United States": "#498491",
-            "China": "#a83232",           // Mat Kızıl
-            "Brazil": "#5b7531",          // Doğa Yeşili
-            "Greenland": "#58615e",       // Gri
-            "Australia": "#45734e",       // Koyu Yeşil
-            "India": "#b87d3b",           // Hardal
-            "Argentina": "#50858c",       // Soluk Turkuaz
-            "Kazakhstan": "#3f7a6f",      // Su Yeşili
-            
-            // İstediğin Gibi İran (Turuncumsu/Kahve tonu) ve Azerbaycan (Açık/Farklı Yeşil) ayrımı
-            "Iran": "#bf6934",            // Belirgin Turuncumsu Toprak Tonu
-            "Azerbaijan": "#6aa84f",      // Açık / Canlı Strateji Yeşili
-            
-            "Germany": "#705b41",         // Mat Kahve
-            "United Kingdom": "#59416b",  // Soluk Mor
-            "France": "#3b6e8c",          // Mat Mavi
-            "Turkey": "#2d6a4f",          // Oyuncu Yeşili
-            "Spain": "#a64438",
-            "Italy": "#467354",
-            "Japan": "#9e3853",
-            "Greece": "#357982",
-            
-            // Afrika Ülkeleri İçin Gerçekçi Mat Toprak, Hardal, Zeytin ve Kum Tonları (Pembe hatası ortadan kalktı)
-            "Egypt": "#c29b38",           // Mat Kum / Hardal Sarısı
-            "Libya": "#a37034",           // Toprak Sarısı
-            "Algeria": "#5e7340",         // Zeytin Yeşili
-            "Sudan": "#8c4a32",           // Kiremit / Kahverengi
-            "Chad": "#735c3c",            // Mat Kahve
-            "Mali": "#b5844b",            // Soluk Toprak
-            "Niger": "#c49a45",           // Hardal
-            "Mauritania": "#61704e",      // Koyu Soluk Yeşil
-            "Nigeria": "#486e40",         // Çim Yeşili
-            "Ethiopia": "#7a4334",        // Kırmızımsı Kahve
-            "Somalia": "#3c6e75",         // Petrol Mavisi
-            "Democratic Republic of the Congo": "#336633", // Orman Yeşili
-            "Congo": "#4d7358",
-            "South Africa": "#705135",    // Kahverengi
-            "Angola": "#854138",          // Mat Kırmızı/Kahve
-            "Morocco": "#a35437",         // Toprak Turuncusu
-            "Tanzania": "#527346",
-            "Kenya": "#825d36",
-            "Madagascar": "#496e5d"
+        // Ülkelerin Gerçek Bayrak Renkleri ve Strateji Oyunu Karşılıkları
+        const strictFlagPalette = {
+            // Avrupa
+            "Norway": "#ba0c2f",          // Norveç Kırmızısı
+            "Sweden": "#005b99",          // İsveç Mavisi
+            "Finland": "#003580",         // Finlandiya Mavisi
+            "Denmark": "#c8102e",         // Danimarka Kırmızısı
+            "Iceland": "#003893",         // İzlanda Mavisi
+            "United Kingdom": "#00247d",  // İngiltere Laciverti
+            "France": "#0055a5",          // Fransa Mavisi
+            "Germany": "#3a3a3a",         // Almanya Koyu Gri/Siyah
+            "Italy": "#009246",           // İtalya Yeşili
+            "Spain": "#aa151b",           // İspanya Kırmızısı
+            "Portugal": "#046a38",        // Portekiz Yeşili
+            "Poland": "#dc143c",          // Polonya Kırmızısı
+            "Ukraine": "#0057b7",         // Ukrayna Mavisi
+            "Greece": "#0d5eaf",          // Yunanistan Mavisi
+            "Ireland": "#169b62",         // İrlanda Yeşili
+            "Switzerland": "#ff0000",     // İsviçre Kırmızısı
+            "Austria": "#ed2939",         // Avusturya Kırmızısı
+            "Romania": "#002b49",         // Romanya Laciverti
+
+            // Amerika & Asya & Okyanusya
+            "United States of America": "#1d4ed8", // ABD Lacivert/Mavi
+            "United States": "#1d4ed8",
+            "Canada": "#bf0a30",          // Kanada Kırmızısı
+            "Mexico": "#006847",          // Meksika Yeşili
+            "Brazil": "#009c3b",          // Brezilya Yeşili
+            "Argentina": "#74acdf",       // Arjantin Açık Mavisi
+            "China": "#de2910",           // Çin Kırmızısı
+            "Russia": "#1c355e",          // Rusya Koyu Mavisi
+            "Japan": "#bc002d",           // Japonya Kırmızısı
+            "India": "#ff9933",           // Hindistan Turuncusu
+            "Iran": "#bf6934",            // İran Toprak/Turuncu Tonu
+            "Azerbaijan": "#38b000",      // Azerbaycan Yeşili
+            "Australia": "#00008b",       // Avustralya Laciverti
+            "Pakistan": "#01411c",        // Pakistan Koyu Yeşili
+            "Saudi Arabia": "#006c35",    // Suudi Arabistan Yeşili
+            "Kazakhstan": "#00a1de",      // Kazakistan Mavisi
+            "Mongolia": "#da2032",        // Moğolistan Kırmızısı
+
+            // Afrika (Gerçekçi ve bilinen bayrak tonları)
+            "Egypt": "#c29b38",           // Mısır Altın Sarısı
+            "Libya": "#000000",           // Libya Siyahı (Strateji için koyu mat ton)
+            "Algeria": "#006633",         // Cezayir Yeşili
+            "South Africa": "#007749",    // Güney Afrika Yeşili
+            "Nigeria": "#008751",         // Nijerya Yeşili
+            "Morocco": "#c1272d",         // Fas Kırmızısı
+            "Sudan": "#d21034",           // Sudan Kırmızısı
+            "Greenland": "#606f7b"        // Grönland Gri
         };
 
         const nameMapping = {
@@ -289,17 +291,15 @@
             }
         });
 
-        // Haritada özel tanımı olmayan diğer küçük ülkeler için pembe/mor yerine uyumlu mat toprak tonu üreteci
-        function getStrategyColor(engName) {
-            if (strategyPalette[engName]) return strategyPalette[engName];
+        // Listede doğrudan adı olmayan ülkeler için rastgele pembe yerine dengeli mat strateji rengi
+        function getFlagBasedColor(engName) {
+            if (strictFlagPalette[engName]) return strictFlagPalette[engName];
             let hash = 0;
             for (let i = 0; i < engName.length; i++) {
                 hash = engName.charCodeAt(i) + ((hash << 5) - hash);
             }
             const h = Math.abs(hash) % 360;
-            // Tonu kırmızı/pembe alanlardan (300-360 ve 0-20 derece) uzaklaştırıp toprak ve zeytin tonlarına (30-160 derece) sabitliyoruz
-            const safeH = (h % 130) + 25; 
-            return `hsl(${safeH}, 32%, 35%)`;
+            return `hsl(${h}, 30%, 35%)`; // Mat ve göz yormayan tonlar
         }
 
         d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
@@ -333,10 +333,11 @@
                     const engName = feature.properties.NAME;
                     const gameName = nameMapping[engName];
 
-                    let fillColor = getStrategyColor(engName);
+                    let fillColor = getFlagBasedColor(engName);
                     let strokeColor = '#04080f'; 
                     let lineWidth = 1.0 / currentTransform.k;
 
+                    // Oyuncu ve Hedef Ülke Vurguları
                     if (gameName === playerCountry) {
                         fillColor = '#1e7e34'; 
                         strokeColor = '#57cc99';
