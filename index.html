@@ -1,486 +1,431 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pax Historia Style - Strategy Map</title>
-    <style>
-        :root {
-            --bg-color: #1B2A64;
-            --panel-bg: rgba(13, 27, 42, 0.9);
-            --panel-border: rgba(51, 65, 85, 0.7);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #5EA9B7;
-            --danger: #7F332E;
-            --success: #285B4A;
-            
-            --ocean-color: #1B2A64; /* İstediğin deniz rengi */
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background-color: var(--ocean-color); color: var(--text-main); }
-
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            cursor: grab;
-            position: absolute;
-            top: 0; left: 0;
-            z-index: 1;
-        }
-        canvas:active { cursor: grabbing; }
-
-        .top-bar {
-            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 1100px;
-            background: var(--panel-bg); backdrop-filter: blur(10px);
-            border: 1px solid var(--panel-border); border-radius: 12px;
-            padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
-            z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-
-        .stats-group { display: flex; gap: 20px; }
-        .stat-box { display: flex; flex-direction: column; }
-        .stat-box span:first-child { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
-        .stat-box span:last-child { font-size: 0.95rem; font-weight: bold; }
-
-        .turn-box { display: flex; align-items: center; gap: 15px; }
-        .next-turn-btn { background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-        .next-turn-btn:hover { opacity: 0.9; }
-
-        .left-overlay {
-            position: absolute; top: 85px; left: 20px; width: 310px;
-            display: flex; flex-direction: column; gap: 12px; z-index: 10;
-        }
-
-        .panel-card {
-            background: var(--panel-bg); backdrop-filter: blur(10px);
-            border: 1px solid var(--panel-border); border-radius: 12px; padding: 15px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        }
-
-        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
-        .action-btn { background: rgba(51, 65, 85, 0.8); color: white; border: 1px solid var(--panel-border); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-align: left; transition: background 0.2s; }
-        .action-btn:hover { background: var(--accent); }
-
-        .country-select-list { max-height: 180px; overflow-y: auto; list-style: none; margin-top: 8px; }
-        .country-select-item { padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between; cursor: pointer; font-size: 0.85rem; margin-bottom: 4px; background: rgba(255,255,255,0.03); }
-        .country-select-item:hover, .country-select-item.active { background: rgba(94, 169, 183, 0.3); }
-
-        .right-overlay {
-            position: absolute; top: 85px; right: 20px; width: 320px;
-            display: flex; flex-direction: column; gap: 12px; z-index: 10;
-        }
-
-        .chat-box { height: 120px; background: rgba(13, 27, 42, 0.8); border: 1px solid var(--panel-border); border-radius: 6px; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; }
-        .chat-msg { padding: 6px 10px; border-radius: 6px; max-width: 85%; }
-        .chat-msg.player { background: var(--accent); align-self: flex-end; color: #0b1329; font-weight: 600; }
-        .chat-msg.ai { background: #334155; align-self: flex-start; }
-
-        .chat-input-area { display: flex; gap: 6px; margin-top: 6px; }
-        .chat-input { flex: 1; background: rgba(13, 27, 42, 0.8); border: 1px solid var(--panel-border); border-radius: 6px; padding: 6px; color: white; font-size: 0.8rem; }
-        .send-btn { background: var(--accent); color: #0b1329; font-weight: bold; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-
-        .news-feed { max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; }
-        .news-item { padding: 6px 8px; background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent); border-radius: 4px; }
-    </style>
-    <!-- D3.js Kütüphanesi -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pax Historia Style - Strategy Map</title>
+<style>
+:root{--panel-bg:rgba(13,27,42,.9);--panel-border:rgba(51,65,85,.7);--text-main:#f8fafc;--text-muted:#94a3b8;--accent:#5EA9B7;--danger:#7F332E;--success:#285B4A;--ocean-color:#1B2A64}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+body,html{width:100%;height:100%;overflow:hidden;background:var(--ocean-color);color:var(--text-main)}
+canvas{display:block;width:100vw;height:100vh;cursor:grab;position:absolute;top:0;left:0;z-index:1;touch-action:none}
+canvas:active{cursor:grabbing}
+#tip{position:absolute;display:none;z-index:5;pointer-events:none;background:var(--panel-bg);border:1px solid var(--panel-border);padding:4px 10px;border-radius:6px;font-size:.8rem}
+.top-bar{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:90%;max-width:1100px;background:var(--panel-bg);backdrop-filter:blur(10px);border:1px solid var(--panel-border);border-radius:12px;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;z-index:10;box-shadow:0 10px 25px rgba(0,0,0,.5)}
+.stats-group{display:flex;gap:20px}
+.stat-box{display:flex;flex-direction:column}
+.stat-box span:first-child{font-size:.7rem;color:var(--text-muted);text-transform:uppercase}
+.stat-box span:last-child{font-size:.95rem;font-weight:bold}
+.turn-box{display:flex;align-items:center;gap:15px}
+.next-turn-btn{background:var(--success);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold;transition:opacity .2s}
+.next-turn-btn:hover{opacity:.9}
+.left-overlay{position:absolute;top:85px;left:20px;width:310px;display:flex;flex-direction:column;gap:12px;z-index:10}
+.right-overlay{position:absolute;top:85px;right:20px;width:320px;display:flex;flex-direction:column;gap:12px;z-index:10}
+.panel-card{background:var(--panel-bg);backdrop-filter:blur(10px);border:1px solid var(--panel-border);border-radius:12px;padding:15px;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.action-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.action-btn{background:rgba(51,65,85,.8);color:#fff;border:1px solid var(--panel-border);padding:8px;border-radius:6px;cursor:pointer;font-size:.8rem;text-align:left;transition:background .2s}
+.action-btn:hover{background:var(--accent)}
+.country-select-list{max-height:180px;overflow-y:auto;list-style:none;margin-top:8px}
+.country-select-item{padding:6px 10px;border-radius:6px;display:flex;justify-content:space-between;cursor:pointer;font-size:.85rem;margin-bottom:4px;background:rgba(255,255,255,.03)}
+.country-select-item:hover,.country-select-item.active{background:rgba(94,169,183,.3)}
+.chat-box{height:120px;background:rgba(13,27,42,.8);border:1px solid var(--panel-border);border-radius:6px;padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:.8rem}
+.chat-msg{padding:6px 10px;border-radius:6px;max-width:85%}
+.chat-msg.player{background:var(--accent);align-self:flex-end;color:#0b1329;font-weight:600}
+.chat-msg.ai{background:#334155;align-self:flex-start}
+.chat-input-area{display:flex;gap:6px;margin-top:6px}
+.chat-input{flex:1;background:rgba(13,27,42,.8);border:1px solid var(--panel-border);border-radius:6px;padding:6px;color:#fff;font-size:.8rem}
+.send-btn{background:var(--accent);color:#0b1329;font-weight:bold;border:none;padding:6px 12px;border-radius:6px;cursor:pointer}
+.news-feed{max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:.8rem}
+.news-item{padding:6px 8px;background:rgba(0,0,0,.3);border-left:3px solid var(--accent);border-radius:4px}
+</style>
+<script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
+<canvas id="gameMap"></canvas>
+<div id="tip"></div>
 
-    <canvas id="gameMap"></canvas>
+<div class="top-bar">
+    <div class="stats-group">
+        <div class="stat-box"><span>Ülke</span><span id="stat-name">Türkiye</span></div>
+        <div class="stat-box"><span>Bütçe</span><span id="stat-money">120 M$</span></div>
+        <div class="stat-box"><span>Nüfus</span><span id="stat-pop">85 M</span></div>
+        <div class="stat-box"><span>Asker</span><span id="stat-army">750 Bin</span></div>
+        <div class="stat-box"><span>İstikrar</span><span id="stat-stability">%85</span></div>
+    </div>
+    <div class="turn-box">
+        <span id="current-date" style="font-size:.9rem;font-weight:bold">2026 / Ocak</span>
+        <button class="next-turn-btn" onclick="nextTurn()">Turu Bitir ➡️</button>
+    </div>
+</div>
 
-    <div class="top-bar">
-        <div class="stats-group">
-            <div class="stat-box"><span>Ülke</span><span id="stat-name">Türkiye</span></div>
-            <div class="stat-box"><span>Bütçe</span><span id="stat-money">120 M$</span></div>
-            <div class="stat-box"><span>Nüfus</span><span id="stat-pop">85 M</span></div>
-            <div class="stat-box"><span>Asker</span><span id="stat-army">750 Bin</span></div>
-            <div class="stat-box"><span>İstikrar</span><span id="stat-stability">%85</span></div>
-        </div>
-        <div class="turn-box">
-            <span id="current-date" style="font-size:0.9rem; font-weight:bold;">2026 / Ocak</span>
-            <button class="next-turn-btn" onclick="nextTurn()">Turu Bitir ➡️</button>
+<div class="left-overlay">
+    <div class="panel-card">
+        <h3 id="selected-country-title" style="color:var(--accent);font-size:1rem">Hedef: ABD</h3>
+        <p id="selected-country-desc" style="font-size:.8rem;color:var(--text-muted);margin-top:4px">Haritadaki ülkelere tıklayarak seçin.</p>
+        <div class="action-grid">
+            <button class="action-btn" onclick="doAction('alliance')">🤝 İttifak</button>
+            <button class="action-btn" onclick="doAction('trade')">📦 Ticaret</button>
+            <button class="action-btn" onclick="doAction('aid')">💰 Yardım</button>
+            <button class="action-btn" onclick="doAction('war')" style="border-left:3px solid var(--danger)">⚔️ Savaş</button>
         </div>
     </div>
+    <div class="panel-card">
+        <h4 style="font-size:.85rem;color:var(--text-muted)">Dünya Ülkeleri</h4>
+        <ul class="country-select-list" id="country-list"></ul>
+    </div>
+</div>
 
-    <div class="left-overlay">
-        <div class="panel-card">
-            <h3 id="selected-country-title" style="color:var(--accent); font-size:1rem;">Hedef: ABD</h3>
-            <p id="selected-country-desc" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Haritadaki ülkelere tıklayarak seçin.</p>
-            
-            <div class="action-grid">
-                <button class="action-btn" onclick="doAction('alliance')">🤝 İttifak</button>
-                <button class="action-btn" onclick="doAction('trade')">📦 Ticaret</button>
-                <button class="action-btn" onclick="doAction('aid')">💰 Yardım</button>
-                <button class="action-btn" onclick="doAction('war')" style="border-left:3px solid var(--danger);">⚔️ Savaş</button>
-            </div>
-        </div>
-
-        <div class="panel-card">
-            <h4 style="font-size:0.85rem; color:var(--text-muted);">Dünya Ülkeleri</h4>
-            <ul class="country-select-list" id="country-list"></ul>
+<div class="right-overlay">
+    <div class="panel-card">
+        <h4 style="font-size:.85rem;margin-bottom:6px">💬 Lider Diplomatik Hattı</h4>
+        <div class="chat-box" id="chat-box"><div class="chat-msg ai">Dünya sahnesinde hamlelerinizi bekliyoruz.</div></div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Diplomatik mesaj...">
+            <button class="send-btn" onclick="sendDiplomacy()">Gönder</button>
         </div>
     </div>
-
-    <div class="right-overlay">
-        <div class="panel-card">
-            <h4 style="font-size:0.85rem; margin-bottom:6px;">💬 Lider Diplomatik Hattı</h4>
-            <div class="chat-box" id="chat-box">
-                <div class="chat-msg ai">Dünya sahnesinde hamlelerinizi bekliyoruz.</div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" class="chat-input" placeholder="Diplomatik mesaj...">
-                <button class="send-btn" onclick="sendDiplomacy()">Gönder</button>
-            </div>
-        </div>
-
-        <div class="panel-card">
-            <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
-            <div class="news-feed" id="news-feed">
-                <div class="news-item">15 özel estetik strateji rengi haritaya ve ülkelere sabitlendi.</div>
-            </div>
-        </div>
+    <div class="panel-card">
+        <h4 style="font-size:.85rem;margin-bottom:6px">📰 Dünya Olayları</h4>
+        <div class="news-feed" id="news-feed"><div class="news-item">Strateji renkleri komşu ülkelere göre otomatik dağıtıldı.</div></div>
     </div>
+</div>
 
-    <script>
-        const countries = {
-            "Türkiye": { name: "Türkiye", money: 120, pop: 85, army: 750, stability: 85, relation: 50 },
-            "ABD": { name: "ABD", money: 850, pop: 335, army: 2100, stability: 90, relation: 60 },
-            "Çin": { name: "Çin", money: 720, pop: 1410, army: 2500, stability: 92, relation: 40 },
-            "Almanya": { name: "Almanya", money: 450, pop: 84, army: 180, stability: 95, relation: 70 },
-            "Rusya": { name: "Rusya", money: 380, pop: 144, army: 1300, stability: 78, relation: 30 },
-            "İngiltere": { name: "İngiltere", money: 330, pop: 67, army: 150, stability: 91, relation: 65 },
-            "Fransa": { name: "Fransa", money: 310, pop: 68, army: 200, stability: 88, relation: 60 },
-            "Japonya": { name: "Japonya", money: 500, pop: 125, army: 250, stability: 96, relation: 65 },
-            "Brezilya": { name: "Brezilya", money: 190, pop: 215, army: 360, stability: 80, relation: 55 },
-            "Hindistan": { name: "Hindistan", money: 350, pop: 1420, army: 3000, stability: 82, relation: 50 },
-            "Yunanistan": { name: "Yunanistan", money: 45, pop: 10, army: 120, stability: 85, relation: 25 },
-            "İran": { name: "İran", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
-        };
+<script>
+const countries = {
+    "Türkiye": { name: "Türkiye", money: 120, pop: 85, army: 750, stability: 85, relation: 50 },
+    "ABD": { name: "ABD", money: 850, pop: 335, army: 2100, stability: 90, relation: 60 },
+    "Çin": { name: "Çin", money: 720, pop: 1410, army: 2500, stability: 92, relation: 40 },
+    "Almanya": { name: "Almanya", money: 450, pop: 84, army: 180, stability: 95, relation: 70 },
+    "Rusya": { name: "Rusya", money: 380, pop: 144, army: 1300, stability: 78, relation: 30 },
+    "İngiltere": { name: "İngiltere", money: 330, pop: 67, army: 150, stability: 91, relation: 65 },
+    "Fransa": { name: "Fransa", money: 310, pop: 68, army: 200, stability: 88, relation: 60 },
+    "Japonya": { name: "Japonya", money: 500, pop: 125, army: 250, stability: 96, relation: 65 },
+    "Brezilya": { name: "Brezilya", money: 190, pop: 215, army: 360, stability: 80, relation: 55 },
+    "Hindistan": { name: "Hindistan", money: 350, pop: 1420, army: 3000, stability: 82, relation: 50 },
+    "Yunanistan": { name: "Yunanistan", money: 45, pop: 10, army: 120, stability: 85, relation: 25 },
+    "İran": { name: "İran", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
+};
 
-        // İstediğin 15 Renk Sabiti (Palet)
-        const PALETTE = {
-            LACİVERT: "#1B2A64",
-            KOYU_YESİL: "#285B4A",
-            TURKUAZ: "#5EA9B7",
-            KİREMİT: "#A15138",
-            ADAÇAYI: "#747D6E",
-            HARDAL: "#A8A92A",
-            KOYU_KAHVE: "#54423F",
-            ÇELİK_MAVİSİ: "#336B9F",
-            ZEYTİN_YESİLİ: "#6D9C2D",
-            TOPRAK_KAHVESİ: "#89572B",
-            GRİ_YESİL: "#86A09F",
-            BRONZ: "#9B7639",
-            ACIK_GRİ_YESİL: "#BABBA1",
-            KOYU_TURKUAZ: "#216967",
-            KOYU_BORDO: "#7F332E"
-        };
+const PALETTE = {
+    LACİVERT: "#1B2A64", KOYU_YESİL: "#285B4A", TURKUAZ: "#5EA9B7", KİREMİT: "#A15138", ADAÇAYI: "#747D6E",
+    HARDAL: "#A8A92A", KOYU_KAHVE: "#54423F", ÇELİK_MAVİSİ: "#336B9F", ZEYTİN_YESİLİ: "#6D9C2D",
+    TOPRAK_KAHVESİ: "#89572B", GRİ_YESİL: "#86A09F", BRONZ: "#9B7639", ACIK_GRİ_YESİL: "#BABBA1",
+    KOYU_TURKUAZ: "#216967", KOYU_BORDO: "#7F332E"
+};
 
-        // Kural 5: Ülke renklerini ülke isimlerine göre sabit bir JSON nesnesinde sakla (Deterministik ve Kalıcı)
-        const strictStrategyPalette = {
-            // Büyük Güçler ve Komşular (Çakışmasız ve Estetik Dağılım)
-            "Turkey": PALETTE.KOYU_YESİL,
-            "United States of America": PALETTE.ÇELİK_MAVİSİ,
-            "United States": PALETTE.ÇELİK_MAVİSİ,
-            "China": PALETTE.KİREMİT,
-            "Russia": PALETTE.ADAÇAYI,
-            "Germany": PALETTE.KOYU_KAHVE,
-            "United Kingdom": PALETTE.TURKUAZ,
-            "France": PALETTE.ÇELİK_MAVİSİ,
-            "Japan": PALETTE.KOYU_BORDO,
-            "Brazil": PALETTE.ZEYTİN_YESİLİ,
-            "India": PALETTE.TOPRAK_KAHVESİ,
-            "Greece": PALETTE.GRİ_YESİL,
-            "Iran": PALETTE.BRONZ,
-            "Azerbaijan": PALETTE.ZEYTİN_YESİLİ,
-            "Canada": PALETTE.KOYU_TURKUAZ,
-            "Australia": PALETTE.ZEYTİN_YESİLİ,
-            "Greenland": PALETTE.ACIK_GRİ_YESİL,
-            "Argentina": PALETTE.TURKUAZ,
-            "Kazakhstan": PALETTE.HARDAL,
-            "Mongolia": PALETTE.TOPRAK_KAHVESİ,
-            "Italy": PALETTE.KİREMİT,
-            "Spain": PALETTE.BRONZ,
-            "Ukraine": PALETTE.HARDAL,
-            "Poland": PALETTE.KOYU_BORDO,
-            "Egypt": PALETTE.HARDAL,
-            "Libya": PALETTE.TOPRAK_KAHVESİ,
-            "Algeria": PALETTE.ADAÇAYI,
-            "Sudan": PALETTE.KOYU_KAHVE,
-            "Saudi Arabia": PALETTE.KOYU_YESİL,
-            "South Africa": PALETTE.TOPRAK_KAHVESİ
-        };
+// Tercih edilen sabit renkler. Komşuyla çakışırsa otomatik başka renk seçilir.
+const strictStrategyPalette = {
+    "Turkey": PALETTE.KOYU_YESİL, "United States of America": PALETTE.ÇELİK_MAVİSİ, "China": PALETTE.KİREMİT,
+    "Russia": PALETTE.ADAÇAYI, "Germany": PALETTE.KOYU_KAHVE, "United Kingdom": PALETTE.TURKUAZ,
+    "France": PALETTE.ÇELİK_MAVİSİ, "Japan": PALETTE.KOYU_BORDO, "Brazil": PALETTE.ZEYTİN_YESİLİ,
+    "India": PALETTE.TOPRAK_KAHVESİ, "Greece": PALETTE.GRİ_YESİL, "Iran": PALETTE.BRONZ,
+    "Azerbaijan": PALETTE.ZEYTİN_YESİLİ, "Canada": PALETTE.KOYU_TURKUAZ, "Australia": PALETTE.ZEYTİN_YESİLİ,
+    "Greenland": PALETTE.ACIK_GRİ_YESİL, "Argentina": PALETTE.TURKUAZ, "Kazakhstan": PALETTE.HARDAL,
+    "Mongolia": PALETTE.TOPRAK_KAHVESİ, "Italy": PALETTE.KİREMİT, "Spain": PALETTE.BRONZ, "Ukraine": PALETTE.HARDAL,
+    "Poland": PALETTE.KOYU_BORDO, "Egypt": PALETTE.HARDAL, "Libya": PALETTE.TOPRAK_KAHVESİ,
+    "Algeria": PALETTE.ADAÇAYI, "Sudan": PALETTE.KOYU_KAHVE, "Saudi Arabia": PALETTE.KOYU_YESİL,
+    "South Africa": PALETTE.TOPRAK_KAHVESİ
+};
 
-        const nameMapping = {
-            "Turkey": "Türkiye",
-            "United States of America": "ABD",
-            "United States": "ABD",
-            "China": "Çin",
-            "Germany": "Almanya",
-            "Russia": "Rusya",
-            "United Kingdom": "İngiltere",
-            "France": "Fransa",
-            "Japan": "Japonya",
-            "Brazil": "Brezilya",
-            "India": "Hindistan",
-            "Iran": "İran",
-            "Greece": "Yunanistan"
-        };
+const nameMapping = {
+    "Turkey": "Türkiye", "United States of America": "ABD", "China": "Çin", "Germany": "Almanya", "Russia": "Rusya",
+    "United Kingdom": "İngiltere", "France": "Fransa", "Japan": "Japonya", "Brazil": "Brezilya", "India": "Hindistan",
+    "Iran": "İran", "Greece": "Yunanistan"
+};
 
-        let playerCountry = "Türkiye";
-        let selectedTarget = "ABD";
-        let year = 2026;
-        let month = 1;
-        const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+let playerCountry = "Türkiye";
+let selectedTarget = "ABD";
+let year = 2026, month = 1;
+const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+let countryOwners = {}; // { "Greece": "Turkey" } -> Yunanistan, Türkiye'nin rengini alır
 
-        // Ülke sahiplikleri (Kural 10: Fethedildiğinde rengi yeni sahibine dönecek altyapı)
-        let countryOwners = {};
+/* ====================== HARİTA MOTORU ====================== */
+const canvas = document.getElementById('gameMap');
+const ctx = canvas.getContext('2d');
+const tip = document.getElementById('tip');
+const GEO_URLS = [
+    'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_0_countries.geojson',
+    'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson'
+];
+// Lacivert denizle aynı olduğu için kara renklerinden çıkarıldı (14 renk).
+const LAND = Object.values(PALETTE).filter(c => c !== PALETTE.LACİVERT);
 
-        const canvas = document.getElementById('gameMap');
-        const context = canvas.getContext('2d');
+let W = 0, H = 0, S0 = 1, tf = d3.zoomIdentity;
+let features = [], labelOrder = [], byId = {}, featOf = {}, baseColor = {}, hoverId = null;
+let status = 'Harita yükleniyor…';
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            renderMap();
-        }
-        window.addEventListener('resize', resizeCanvas);
+const projection = d3.geoEquirectangular().precision(0.5);
+const path = d3.geoPath(projection, ctx);
+const zoom = d3.zoom().scaleExtent([1, 60]).on('zoom', e => { tf = e.transform; renderMap(); });
+d3.select(canvas).call(zoom);
 
-        const projection = d3.geoEquirectangular()
-            .scale(240)
-            .translate([window.innerWidth / 2, window.innerHeight / 2]);
+function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    S0 = Math.max(W / (2 * Math.PI), H / Math.PI); // harita ekranı dikeyde her zaman doldurur
+    zoom.extent([[0, 0], [W, H]])
+        .translateExtent([[-Infinity, H / 2 - S0 * Math.PI / 2], [Infinity, H / 2 + S0 * Math.PI / 2]]);
+    d3.select(canvas).call(zoom.transform, tf);
+}
+window.addEventListener('resize', resizeCanvas);
 
-        const pathGenerator = d3.geoPath(projection, context);
+// Yatay kaydırma projeksiyonun dönüşü (rotate) ile yapılır: sonsuz döngü + doğru tıklama koordinatı.
+function applyView() {
+    const k = tf.k, s = S0 * k;
+    projection.scale(s)
+        .translate([W / 2, k * H / 2 + tf.y])
+        .rotate([(((k - 1) * W / 2 + tf.x) / s) * 180 / Math.PI, 0])
+        .clipExtent([[-4, -4], [W + 4, H + 4]]);
+}
 
-        let worldGeoJSON = null;
-        let currentTransform = d3.zoomIdentity;
+const polysOf = f => f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
 
-        const zoomBehavior = d3.zoom()
-            .scaleExtent([1, 35])
-            .on('zoom', (event) => {
-                currentTransform = event.transform;
-                projection
-                    .scale(240 * currentTransform.k)
-                    .translate([
-                        (window.innerWidth / 2) + currentTransform.x,
-                        (window.innerHeight / 2) + currentTransform.y
-                    ]);
-                renderMap();
-            });
-
-        d3.select(canvas).call(zoomBehavior);
-
-        canvas.addEventListener('click', (event) => {
-            if (!worldGeoJSON) return;
-            const rect = canvas.getBoundingClientRect();
-            const clickX = event.clientX - rect.left;
-            const clickY = event.clientY - rect.top;
-
-            const coords = projection.invert([clickX, clickY]);
-            if (!coords) return;
-
-            for (let feature of worldGeoJSON.features) {
-                if (d3.geoContains(feature, coords)) {
-                    const engName = feature.properties.NAME;
-                    const gameName = nameMapping[engName];
-                    if (gameName && gameName !== playerCountry) {
-                        selectCountry(gameName);
-                        break;
-                    }
-                }
-            }
+function prepare(data) {
+    features = data.features.filter(f => f.geometry);
+    features.forEach(f => {
+        f.id = f.properties.NAME || f.properties.ADMIN;
+        byId[f.id] = f;
+        let best = null, bestA = -1;
+        polysOf(f).forEach(r => {
+            const g = { type: 'Polygon', coordinates: r };
+            if (d3.geoArea(g) > 2 * Math.PI) r.forEach(x => x.reverse()); // ters sarım düzeltmesi
+            const a = d3.geoArea(g);
+            if (a > bestA) { bestA = a; best = g; }
         });
+        f.area = bestA; f.lbl = d3.geoCentroid(best); f.bb = d3.geoBounds(f);
+    });
+    for (const k in nameMapping) if (byId[k]) featOf[nameMapping[k]] = byId[k];
+    colorCountries();
+    labelOrder = [...features].sort((a, b) => b.area - a.area);
+}
 
-        // Sabit ve deterministik renk getirici (Kural 9 & 2)
-        function getCountryColor(engName) {
-            // Eğer ülke fethedildiyse sahibinin rengini alır (Kural 10)
-            let owner = countryOwners[engName];
-            let targetKey = owner || engName;
-
-            if (strictStrategyPalette[targetKey]) {
-                return strictStrategyPalette[targetKey];
-            }
-            
-            // Listede direkt olmayan diğer ülkeler için isme bağlı sabit hash (rastgele değil)
-            let hash = 0;
-            for (let i = 0; i < targetKey.length; i++) {
-                hash = targetKey.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const paletteValues = Object.values(PALETTE);
-            return paletteValues[Math.abs(hash) % paletteValues.length];
-        }
-
-        d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
-            .then(data => {
-                worldGeoJSON = data;
-                resizeCanvas();
-                init();
-            })
-            .catch(error => {
-                console.error("Harita verisi yüklenirken hata oluştu:", error);
-            });
-
-        function renderMap() {
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Kural 7: Denizleri #1B2A64 renginde tut
-            context.fillStyle = PALETTE.LACİVERT;
-            context.fillRect(0, 0, canvas.width, canvas.height);
-
-            if (!worldGeoJSON) return;
-
-            const currentScale = projection.scale();
-            const mapWidth = currentScale * 2 * Math.PI; 
-            const loops = [-1, 0, 1];
-
-            loops.forEach(loopIndex => {
-                context.save();
-                context.translate(loopIndex * mapWidth, 0);
-
-                worldGeoJSON.features.forEach(feature => {
-                    const engName = feature.properties.NAME;
-                    const gameName = nameMapping[engName];
-
-                    let fillColor = getCountryColor(engName);
-                    // Kural 8: Ülke sınırlarını ince, koyu ve belirgin çizgilerle göster
-                    let strokeColor = '#080c16'; 
-                    let lineWidth = 0.9 / currentTransform.k;
-
-                    // Oyuncu ve Hedef Ülke Vurguları
-                    if (gameName === playerCountry) {
-                        strokeColor = '#57cc99';
-                        lineWidth = 2.0 / currentTransform.k;
-                    } else if (gameName === selectedTarget) {
-                        strokeColor = '#ff6b6b';
-                        lineWidth = 2.0 / currentTransform.k;
-                    }
-
-                    context.beginPath();
-                    pathGenerator(feature);
-                    context.fillStyle = fillColor;
-                    context.fill();
-                    context.lineWidth = lineWidth;
-                    context.strokeStyle = strokeColor;
-                    context.stroke();
-                });
-
-                context.restore();
-            });
-        }
-
-        function init() {
-            renderCountryList();
-            updatePlayerStats();
-            updateTargetInfo();
-        }
-
-        function renderCountryList() {
-            const list = document.getElementById("country-list");
-            list.innerHTML = "";
-            for (let key in countries) {
-                if (key === playerCountry) continue;
-                const li = document.createElement("li");
-                li.className = `country-select-item ${key === selectedTarget ? 'active' : ''}`;
-                li.innerHTML = `<span>${countries[key].name}</span> <span style="color:var(--text-muted); font-size:0.75rem;">${countries[key].relation}/100</span>`;
-                li.onclick = () => selectCountry(key);
-                list.appendChild(li);
+// Ortak köşe noktalarından komşuluk grafiği çıkarıp açgözlü boyama yapar (deterministik).
+function colorCountries() {
+    const seen = {}, adj = {};
+    features.forEach(f => adj[f.id] = new Set());
+    features.forEach(f => polysOf(f).forEach(poly => poly.forEach(ring => ring.forEach(pt => {
+        const key = Math.round(pt[0] * 1e4) + ',' + Math.round(pt[1] * 1e4);
+        const o = seen[key];
+        if (o === undefined) seen[key] = f.id;
+        else if (o !== f.id) { adj[o].add(f.id); adj[f.id].add(o); }
+    }))));
+    const fixed = Object.keys(strictStrategyPalette).filter(n => byId[n]);
+    const rest = features.map(f => f.id).filter(n => !fixed.includes(n))
+        .sort((a, b) => adj[b].size - adj[a].size || (a < b ? -1 : 1));
+    [...fixed, ...rest].forEach(id => {
+        const used = new Set([...adj[id]].map(n => baseColor[n]));
+        const pref = strictStrategyPalette[id];
+        let c = pref && !used.has(pref) ? pref : null;
+        if (!c) {
+            let h = 0;
+            for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+            for (let i = 0; i < LAND.length && !c; i++) {
+                const t = LAND[(h + i) % LAND.length];
+                if (!used.has(t)) c = t;
             }
         }
+        baseColor[id] = c || LAND[0];
+    });
+}
 
-        function selectCountry(key) {
-            if (key === playerCountry) return;
-            selectedTarget = key;
-            renderCountryList();
-            updateTargetInfo();
-            renderMap();
-        }
+// Fethedilen ülke sahibinin rengini alır; taban renkler değişmez.
+function getCountryColor(f) { return baseColor[countryOwners[f.id] || f.id]; }
 
-        function updatePlayerStats() {
-            const p = countries[playerCountry];
-            document.getElementById("stat-name").innerText = p.name;
-            document.getElementById("stat-money").innerText = p.money + " M$";
-            document.getElementById("stat-pop").innerText = p.pop + " M";
-            document.getElementById("stat-army").innerText = p.army.toLocaleString() + " Bin";
-            document.getElementById("stat-stability").innerText = "%" + p.stability;
-        }
+function featureAt(x, y) {
+    const c = projection.invert([x, y]);
+    if (!c) return null;
+    for (const f of features) {
+        const [[w, s], [e, n]] = f.bb;
+        if (c[1] < s || c[1] > n) continue;
+        if (w <= e ? (c[0] < w || c[0] > e) : (c[0] < w && c[0] > e)) continue;
+        if (d3.geoContains(f, c)) return f;
+    }
+    return null;
+}
 
-        function updateTargetInfo() {
-            const t = countries[selectedTarget];
-            if (t) {
-                document.getElementById("selected-country-title").innerText = `Hedef: ${t.name}`;
-                document.getElementById("selected-country-desc").innerText = `İlişki Puanı: ${t.relation}/100`;
-            }
-        }
+function outline(f, color, width) {
+    if (!f) return;
+    ctx.beginPath(); path(f);
+    ctx.lineWidth = width; ctx.strokeStyle = color; ctx.stroke();
+}
 
-        function nextTurn() {
-            month++;
-            if (month > 12) { month = 1; year++; }
-            document.getElementById("current-date").innerText = `${year} / ${months[month-1]}`;
-            countries[playerCountry].money += 5;
-            updatePlayerStats();
-            addNews(`Tarih ilerledi: ${months[month-1]} ${year}.`);
-        }
+function drawLabels(s) {
+    const placed = [];
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    for (const f of labelOrder) {
+        const name = nameMapping[f.id] || f.id;
+        const px = f.area * s * s / Math.max(0.25, Math.cos(f.lbl[1] * Math.PI / 180));
+        const fs = Math.min(22, Math.sqrt(px) * 1.25 / (name.length * 0.55));
+        if (fs < 8) continue;
+        const p = projection(f.lbl);
+        if (!p || p[0] < 0 || p[0] > W || p[1] < 0 || p[1] > H) continue;
+        ctx.font = `600 ${fs}px 'Segoe UI', sans-serif`;
+        const w = ctx.measureText(name).width + 6, h = fs + 4;
+        const b = [p[0] - w / 2, p[1] - h / 2, p[0] + w / 2, p[1] + h / 2];
+        if (placed.some(o => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1])) continue;
+        placed.push(b);
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,12,22,.7)'; ctx.strokeText(name, p[0], p[1]);
+        ctx.fillStyle = 'rgba(248,250,252,.92)'; ctx.fillText(name, p[0], p[1]);
+    }
+}
 
-        function addNews(text) {
-            const feed = document.getElementById("news-feed");
-            const item = document.createElement("div");
-            item.className = "news-item";
-            item.innerText = text;
-            feed.prepend(item);
-        }
+function renderMap() {
+    ctx.fillStyle = PALETTE.LACİVERT; // deniz
+    ctx.fillRect(0, 0, W, H);
+    if (!features.length) {
+        ctx.fillStyle = '#94a3b8'; ctx.font = "16px 'Segoe UI', sans-serif";
+        ctx.textAlign = 'center'; ctx.fillText(status, W / 2, H / 2);
+        return;
+    }
+    applyView();
+    const k = tf.k;
+    ctx.lineJoin = 'round';
+    ctx.beginPath(); features.forEach(f => path(f)); // kıyı gölgesi
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.stroke();
+    features.forEach(f => { ctx.beginPath(); path(f); ctx.fillStyle = getCountryColor(f); ctx.fill(); });
+    ctx.beginPath(); features.forEach(f => path(f)); // tüm sınırlar tek geçişte
+    ctx.lineWidth = Math.min(1.4, 0.7 + k * 0.03); ctx.strokeStyle = '#080c16'; ctx.stroke();
 
-        function doAction(type) {
-            const t = countries[selectedTarget];
-            if (!t) return;
-            if (type === 'alliance') {
-                if (t.relation >= 60) {
-                    t.relation += 10;
-                    addNews(`🎉 ${t.name} ile ittifak kuruldu!`);
-                } else {
-                    addNews(`❌ ${t.name} teklifi reddetti.`);
-                }
-            } else if (type === 'trade') {
-                countries[playerCountry].money += 15;
-                addNews(`📦 ${t.name} ile ticaret yapıldı (+15 M$).`);
-            } else if (type === 'aid') {
-                if (countries[playerCountry].money >= 10) {
-                    countries[playerCountry].money -= 10;
-                    t.relation += 15;
-                    addNews(`💰 ${t.name} ülkesine yardım edildi.`);
-                } else {
-                    addNews(`❌ Yeterli bütçe yok.`);
-                }
-            } else if (type === 'war') {
-                t.relation = 0;
-                countries[playerCountry].stability -= 10;
-                addNews(`⚔️ ${t.name} ülkesine savaş açıldı!`);
-            }
-            updatePlayerStats();
-            updateTargetInfo();
-            renderCountryList();
-            renderMap();
-        }
+    if (hoverId && byId[hoverId]) {
+        ctx.beginPath(); path(byId[hoverId]); ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fill();
+        outline(byId[hoverId], 'rgba(255,255,255,.8)', 1.5);
+    }
+    outline(featOf[selectedTarget], '#ff6b6b', 2.2);
+    outline(featOf[playerCountry], '#57cc99', 2.2);
+    drawLabels(S0 * k);
+}
 
-        function sendDiplomacy() {
-            const input = document.getElementById("chat-input");
-            const val = input.value.trim();
-            if(!val) return;
+/* ====================== ETKİLEŞİM ====================== */
+let down = null, raf = 0, mx = 0, my = 0;
+canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+canvas.addEventListener('click', e => {
+    if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    const f = featureAt(e.clientX, e.clientY);
+    const g = f && nameMapping[f.id];
+    if (g && g !== playerCountry) selectCountry(g);
+});
+canvas.addEventListener('mousemove', e => {
+    if (e.buttons) return;
+    mx = e.clientX; my = e.clientY;
+    if (!raf) raf = requestAnimationFrame(onHover);
+});
+canvas.addEventListener('mouseleave', () => { hoverId = null; tip.style.display = 'none'; renderMap(); });
 
-            const box = document.getElementById("chat-box");
-            box.innerHTML += `<div class="chat-msg player">${val}</div>`;
-            input.value = "";
+function onHover() {
+    raf = 0;
+    const f = features.length ? featureAt(mx, my) : null;
+    const id = f ? f.id : null;
+    if (id !== hoverId) { hoverId = id; renderMap(); }
+    if (f) {
+        tip.textContent = nameMapping[id] || id;
+        tip.style.left = (mx + 14) + 'px'; tip.style.top = (my + 14) + 'px'; tip.style.display = 'block';
+    } else tip.style.display = 'none';
+}
 
-            setTimeout(() => {
-                box.innerHTML += `<div class="chat-msg ai">${countries[selectedTarget].name}: Talebiniz değerlendirmeye alındı.</div>`;
-                box.scrollTop = box.scrollHeight;
-            }, 800);
-            box.scrollTop = box.scrollHeight;
-        }
-    </script>
+resizeCanvas();
+(async () => {
+    for (const url of GEO_URLS) {
+        try {
+            prepare(await d3.json(url));
+            resizeCanvas(); init();
+            return;
+        } catch (err) { console.warn('Harita verisi alınamadı:', url, err); }
+    }
+    status = 'Harita verisi yüklenemedi. Bağlantını kontrol edip sayfayı yenile.';
+    renderMap();
+})();
+
+/* ====================== OYUN MANTIĞI (değişmedi) ====================== */
+function init() { renderCountryList(); updatePlayerStats(); updateTargetInfo(); }
+
+function renderCountryList() {
+    const list = document.getElementById("country-list");
+    list.innerHTML = "";
+    for (let key in countries) {
+        if (key === playerCountry) continue;
+        const li = document.createElement("li");
+        li.className = `country-select-item ${key === selectedTarget ? 'active' : ''}`;
+        li.innerHTML = `<span>${countries[key].name}</span> <span style="color:var(--text-muted);font-size:.75rem">${countries[key].relation}/100</span>`;
+        li.onclick = () => selectCountry(key);
+        list.appendChild(li);
+    }
+}
+
+function selectCountry(key) {
+    if (key === playerCountry) return;
+    selectedTarget = key;
+    renderCountryList(); updateTargetInfo(); renderMap();
+}
+
+function updatePlayerStats() {
+    const p = countries[playerCountry];
+    document.getElementById("stat-name").innerText = p.name;
+    document.getElementById("stat-money").innerText = p.money + " M$";
+    document.getElementById("stat-pop").innerText = p.pop + " M";
+    document.getElementById("stat-army").innerText = p.army.toLocaleString() + " Bin";
+    document.getElementById("stat-stability").innerText = "%" + p.stability;
+}
+
+function updateTargetInfo() {
+    const t = countries[selectedTarget];
+    if (t) {
+        document.getElementById("selected-country-title").innerText = `Hedef: ${t.name}`;
+        document.getElementById("selected-country-desc").innerText = `İlişki Puanı: ${t.relation}/100`;
+    }
+}
+
+function nextTurn() {
+    month++;
+    if (month > 12) { month = 1; year++; }
+    document.getElementById("current-date").innerText = `${year} / ${months[month - 1]}`;
+    countries[playerCountry].money += 5;
+    updatePlayerStats();
+    addNews(`Tarih ilerledi: ${months[month - 1]} ${year}.`);
+}
+
+function addNews(text) {
+    const item = document.createElement("div");
+    item.className = "news-item";
+    item.innerText = text;
+    document.getElementById("news-feed").prepend(item);
+}
+
+function doAction(type) {
+    const t = countries[selectedTarget];
+    if (!t) return;
+    if (type === 'alliance') {
+        if (t.relation >= 60) { t.relation += 10; addNews(`🎉 ${t.name} ile ittifak kuruldu!`); }
+        else addNews(`❌ ${t.name} teklifi reddetti.`);
+    } else if (type === 'trade') {
+        countries[playerCountry].money += 15;
+        addNews(`📦 ${t.name} ile ticaret yapıldı (+15 M$).`);
+    } else if (type === 'aid') {
+        if (countries[playerCountry].money >= 10) {
+            countries[playerCountry].money -= 10; t.relation += 15;
+            addNews(`💰 ${t.name} ülkesine yardım edildi.`);
+        } else addNews(`❌ Yeterli bütçe yok.`);
+    } else if (type === 'war') {
+        t.relation = 0; countries[playerCountry].stability -= 10;
+        addNews(`⚔️ ${t.name} ülkesine savaş açıldı!`);
+    }
+    updatePlayerStats(); updateTargetInfo(); renderCountryList(); renderMap();
+}
+
+function sendDiplomacy() {
+    const input = document.getElementById("chat-input");
+    const val = input.value.trim();
+    if (!val) return;
+    const box = document.getElementById("chat-box");
+    box.innerHTML += `<div class="chat-msg player">${val}</div>`;
+    input.value = "";
+    setTimeout(() => {
+        box.innerHTML += `<div class="chat-msg ai">${countries[selectedTarget].name}: Talebiniz değerlendirmeye alındı.</div>`;
+        box.scrollTop = box.scrollHeight;
+    }, 800);
+    box.scrollTop = box.scrollHeight;
+}
+</script>
 </body>
 </html>
