@@ -21,13 +21,16 @@
 
         /* TAM EKRAN GERÇEK HARİTA ARKA PLANI */
         .map-viewport {
-            position: absolute;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: url('world-map.png') no-repeat center center;
-            background-size: cover;
-            background-color: #0d1b2a;
-            z-index: 1;
-        }
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh;
+    background: url('world-map.png') no-repeat center center;
+    background-size: 100% 100%; /* Resim ile SVG katmanını tam eşitler */
+    background-color: #0d1b2a;
+    z-index: 1;
+}
 
         /* SVG TIKLAMA KATMANI */
         svg#interactive-overlay {
