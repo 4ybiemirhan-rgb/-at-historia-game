@@ -25,7 +25,7 @@ canvas:active{cursor:grabbing}
 .action-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
 .action-btn{background:rgba(51,65,85,.8);color:#fff;border:1px solid var(--panel-border);padding:8px;border-radius:6px;cursor:pointer;font-size:.8rem;text-align:left;transition:background .2s}
 .action-btn:hover{background:var(--accent)}
-.country-select-list{max-height:180px;overflow-y:auto;list-style:none;margin-top:8px}
+.country-select-list{max-height:230px;overflow-y:auto;list-style:none;margin-top:8px}
 .country-select-item{padding:6px 10px;border-radius:6px;display:flex;justify-content:space-between;cursor:pointer;font-size:.85rem;margin-bottom:4px;background:rgba(255,255,255,.03)}
 .country-select-item:hover,.country-select-item.active{background:rgba(94,169,183,.3)}
 .chat-box{height:120px;background:rgba(13,27,42,.8);border:1px solid var(--panel-border);border-radius:6px;padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:.8rem}
@@ -71,6 +71,7 @@ canvas:active{cursor:grabbing}
     </div>
     <div class="panel-card">
         <h4 style="font-size:.85rem;color:var(--text-muted)">Dünya Ülkeleri</h4>
+        <input type="text" id="country-search" class="chat-input" style="width:100%;margin-top:8px" placeholder="Ülke ara..." oninput="renderCountryList()">
         <ul class="country-select-list" id="country-list"></ul>
     </div>
 </div>
@@ -154,9 +155,16 @@ let W = 0, H = 0, S0 = 1, tf = d3.zoomIdentity;
 let features = [], labelOrder = [], byId = {}, featOf = {}, baseColor = {}, hoverId = null;
 let status = 'Harita yükleniyor…';
 
-const projection = d3.geoEquirectangular().precision(0.5);
+const projection = d3.geoEquirectangular().precision(0);
 const path = d3.geoPath(projection, ctx);
-const zoom = d3.zoom().scaleExtent([1, 60]).on('zoom', e => { tf = e.transform; renderMap(); });
+let moving = false, idleT = 0, pending = 0;
+function requestRender() { if (!pending) pending = requestAnimationFrame(() => { pending = 0; renderMap(); }); }
+// Hareket sırasında hafif çizim (gölge/etiket yok), durunca tam kalite çizim.
+const zoom = d3.zoom().scaleExtent([1, 60]).on('zoom', e => {
+    tf = e.transform; moving = true;
+    clearTimeout(idleT); idleT = setTimeout(() => { moving = false; requestRender(); }, 160);
+    requestRender();
+});
 d3.select(canvas).call(zoom);
 
 function resizeCanvas() {
@@ -182,19 +190,59 @@ function applyView() {
 
 const polysOf = f => f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
 
+const trNames = (() => { try { return new Intl.DisplayNames(['tr'], { type: 'region' }); } catch (e) { return null; } })();
+const hashStr = s => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+
+// Natural Earth özelliklerinden (nüfus, GSYH) her ülke için oyun verisi üretir; Türkçe isimler tarayıcıdan gelir.
+function makeCountry(f) {
+    const p = f.properties, pop = (p.POP_EST || 0) / 1e6;
+    if (pop <= 0 || f.id === 'Antarctica') return;
+    if (!nameMapping[f.id]) {
+        const iso = [p.ISO_A2_EH, p.ISO_A2].find(c => c && c !== '-99');
+        let tr = null;
+        try { tr = iso && trNames && trNames.of(iso); } catch (e) {}
+        nameMapping[f.id] = tr && tr !== iso ? tr : f.id;
+    }
+    const n = nameMapping[f.id];
+    if (countries[n]) return;
+    const h = hashStr(f.id), gdp = p.GDP_MD || p.GDP_MD_EST || 0;
+    countries[n] = {
+        name: n, money: Math.max(3, Math.round(gdp / 25000)),
+        pop: pop >= 10 ? Math.round(pop) : Math.round(pop * 100) / 100,
+        army: Math.round(8 + 9 * Math.pow(pop, 0.7)), stability: 55 + h % 40, relation: 25 + (h >> 3) % 50
+    };
+}
+
+// Görünür alan: merkez boylam, yarım genişlik ve enlem aralığı (kırpma için).
+function viewState() {
+    const c = projection.invert([W / 2, H / 2]);
+    return { c: c[0], hw: Math.min(180, W / 2 / projection.scale() * 180 / Math.PI) + 2,
+             n: projection.invert([W / 2, 0])[1] + 2, s: projection.invert([W / 2, H])[1] - 2 };
+}
+function partVisible(bb, v) {
+    const [[w, s], [e, n]] = bb;
+    if (n < v.s || s > v.n) return false;
+    if (v.hw >= 180) return true;
+    const hw = (w <= e ? e - w : e + 360 - w) / 2, mid = w + hw;
+    const d = Math.abs(mid - v.c) % 360;
+    return (d > 180 ? 360 - d : d) <= hw + v.hw;
+}
+
 function prepare(data) {
     features = data.features.filter(f => f.geometry);
     features.forEach(f => {
         f.id = f.properties.NAME || f.properties.ADMIN;
         byId[f.id] = f;
-        let best = null, bestA = -1;
+        let best = null, bestA = -1; f.parts = [];
         polysOf(f).forEach(r => {
             const g = { type: 'Polygon', coordinates: r };
             if (d3.geoArea(g) > 2 * Math.PI) r.forEach(x => x.reverse()); // ters sarım düzeltmesi
             const a = d3.geoArea(g);
             if (a > bestA) { bestA = a; best = g; }
+            f.parts.push({ g, bb: d3.geoBounds(g) });
         });
         f.area = bestA; f.lbl = d3.geoCentroid(best); f.bb = d3.geoBounds(f);
+        makeCountry(f);
     });
     for (const k in nameMapping) if (byId[k]) featOf[nameMapping[k]] = byId[k];
     colorCountries();
@@ -280,21 +328,25 @@ function renderMap() {
         return;
     }
     applyView();
-    const k = tf.k;
+    const k = tf.k, v = viewState();
+    const trace = f => f.parts.forEach(p => { if (partVisible(p.bb, v)) path(p.g); });
+    const vis = features.filter(f => f.parts.some(p => partVisible(p.bb, v)));
     ctx.lineJoin = 'round';
-    ctx.beginPath(); features.forEach(f => path(f)); // kıyı gölgesi
-    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.stroke();
-    features.forEach(f => { ctx.beginPath(); path(f); ctx.fillStyle = getCountryColor(f); ctx.fill(); });
-    ctx.beginPath(); features.forEach(f => path(f)); // tüm sınırlar tek geçişte
-    ctx.lineWidth = Math.min(1.4, 0.7 + k * 0.03); ctx.strokeStyle = '#080c16'; ctx.stroke();
-
-    if (hoverId && byId[hoverId]) {
-        ctx.beginPath(); path(byId[hoverId]); ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fill();
-        outline(byId[hoverId], 'rgba(255,255,255,.8)', 1.5);
+    if (!moving) { // kıyı gölgesi
+        ctx.beginPath(); vis.forEach(trace);
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.stroke();
     }
-    outline(featOf[selectedTarget], '#ff6b6b', 2.2);
-    outline(featOf[playerCountry], '#57cc99', 2.2);
-    drawLabels(S0 * k);
+    ctx.lineWidth = Math.min(1.4, 0.7 + k * 0.03); ctx.strokeStyle = '#080c16';
+    vis.forEach(f => { ctx.beginPath(); trace(f); ctx.fillStyle = getCountryColor(f); ctx.fill(); ctx.stroke(); });
+    if (!moving && hoverId && byId[hoverId]) {
+        ctx.beginPath(); trace(byId[hoverId]); ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fill();
+        ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.stroke();
+    }
+    [[featOf[selectedTarget], '#ff6b6b'], [featOf[playerCountry], '#57cc99']].forEach(([f, c]) => {
+        if (!f) return;
+        ctx.beginPath(); trace(f); ctx.lineWidth = 2.2; ctx.strokeStyle = c; ctx.stroke();
+    });
+    if (!moving) drawLabels(S0 * k);
 }
 
 /* ====================== ETKİLEŞİM ====================== */
@@ -342,15 +394,20 @@ function init() { renderCountryList(); updatePlayerStats(); updateTargetInfo(); 
 
 function renderCountryList() {
     const list = document.getElementById("country-list");
+    const q = document.getElementById("country-search").value.toLocaleLowerCase('tr').trim();
     list.innerHTML = "";
-    for (let key in countries) {
-        if (key === playerCountry) continue;
-        const li = document.createElement("li");
-        li.className = `country-select-item ${key === selectedTarget ? 'active' : ''}`;
-        li.innerHTML = `<span>${countries[key].name}</span> <span style="color:var(--text-muted);font-size:.75rem">${countries[key].relation}/100</span>`;
-        li.onclick = () => selectCountry(key);
-        list.appendChild(li);
-    }
+    Object.keys(countries)
+        .filter(k => k !== playerCountry && k.toLocaleLowerCase('tr').includes(q))
+        .sort((a, b) => a.localeCompare(b, 'tr'))
+        .forEach(key => {
+            const li = document.createElement("li");
+            li.className = `country-select-item ${key === selectedTarget ? 'active' : ''}`;
+            li.innerHTML = `<span>${countries[key].name}</span> <span style="color:var(--text-muted);font-size:.75rem">${countries[key].relation}/100</span>`;
+            li.onclick = () => selectCountry(key);
+            list.appendChild(li);
+        });
+    const act = list.querySelector('.active');
+    if (act) act.scrollIntoView({ block: 'nearest' });
 }
 
 function selectCountry(key) {
@@ -370,10 +427,10 @@ function updatePlayerStats() {
 
 function updateTargetInfo() {
     const t = countries[selectedTarget];
-    if (t) {
-        document.getElementById("selected-country-title").innerText = `Hedef: ${t.name}`;
-        document.getElementById("selected-country-desc").innerText = `İlişki Puanı: ${t.relation}/100`;
-    }
+    if (!t) return;
+    document.getElementById("selected-country-title").innerText = `Hedef: ${t.name}`;
+    document.getElementById("selected-country-desc").innerText =
+        `İlişki: ${t.relation}/100 • Nüfus: ${t.pop} M • Bütçe: ${t.money} M$ • Asker: ${t.army.toLocaleString()} Bin • İstikrar: %${t.stability}`;
 }
 
 function nextTurn() {
@@ -413,19 +470,22 @@ function doAction(type) {
     updatePlayerStats(); updateTargetInfo(); renderCountryList(); renderMap();
 }
 
-function sendDiplomacy() {
-    const input = document.getElementById("chat-input");
-    const val = input.value.trim();
-    if (!val) return;
-    const box = document.getElementById("chat-box");
-    box.innerHTML += `<div class="chat-msg player">${val}</div>`;
-    input.value = "";
-    setTimeout(() => {
-        box.innerHTML += `<div class="chat-msg ai">${countries[selectedTarget].name}: Talebiniz değerlendirmeye alındı.</div>`;
-        box.scrollTop = box.scrollHeight;
-    }, 800);
-    box.scrollTop = box.scrollHeight;
+function addChat(cls, text) {
+    const box = document.getElementById("chat-box"), d = document.createElement("div");
+    d.className = "chat-msg " + cls; d.textContent = text;
+    box.appendChild(d); box.scrollTop = box.scrollHeight;
 }
+
+function sendDiplomacy() {
+    const input = document.getElementById("chat-input"), val = input.value.trim(), t = countries[selectedTarget];
+    if (!val || !t) return;
+    addChat('player', val); input.value = "";
+    const r = t.relation;
+    const reply = r >= 60 ? "Dostane yaklaşımınızı memnuniyetle karşılıyoruz."
+        : r >= 30 ? "Talebiniz değerlendirmeye alındı." : "Bu ilişki düzeyinde konuşacak pek bir şeyimiz yok.";
+    setTimeout(() => addChat('ai', `${t.name}: ${reply}`), 800);
+}
+document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendDiplomacy(); });
 </script>
 </body>
 </html>
