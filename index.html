@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pax Historia Style - Colored Strategy Map</title>
+    <title>Pax Historia Style - Flag Colored Strategy Map</title>
     <style>
         :root {
-            --bg-color: #0b1329;
+            --bg-color: #0f2b48;
             --panel-bg: rgba(15, 23, 42, 0.88);
             --panel-border: rgba(51, 65, 85, 0.7);
             --text-main: #f8fafc;
@@ -15,9 +15,7 @@
             --danger: #ef4444;
             --success: #22c55e;
             
-            --ocean-color: #0b1329;
-            --land-player: #15803d;    /* Oyuncu Ülkesi (Yeşil) */
-            --land-selected: #b91c1c;  /* Seçilen Hedef (Kırmızı) */
+            --ocean-color: #0f2b48; /* Hafif koyu estetik deniz ve okyanus mavisi */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -149,7 +147,7 @@
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
             <div class="news-feed" id="news-feed">
-                <div class="news-item">Sınırlar belirginleştirildi ve renkli ülke paleti aktif edildi.</div>
+                <div class="news-item">Bayrak renkleri ve yeni koyu mavi okyanus tonu haritaya uygulandı.</div>
             </div>
         </div>
     </div>
@@ -170,20 +168,38 @@
             "İran": { name: "İran", money: 70, pop: 89, army: 600, stability: 70, relation: 35 }
         };
 
-        // Ülkelere özel karakteristik renkler (Strateji oyunu paleti)
-        const countryColors = {
-            "Türkiye": "#15803d",
-            "ABD": "#1d4ed8",
-            "Çin": "#b91c1c",
-            "Almanya": "#b45309",
-            "Rusya": "#7c2d12",
-            "İngiltere": "#6d28d9",
-            "Fransa": "#0284c7",
-            "Japonya": "#be185d",
-            "Brezilya": "#15803d",
-            "Hindistan": "#c2410c",
-            "Yunanistan": "#0d9488",
-            "İran": "#4d7c0f"
+        // Ülkelerin Bayrak Bazlı Birincil ve İkincil/Komşuluk Renk Paleti
+        // (Komşu ülkelerde renk çakışmasını engellemek için 2. bayrak renkleri tanımlanmıştır)
+        const flagColors = {
+            "Turkey": { primary: "#c8102e", secondary: "#b00c25" },                   // Kırmızı
+            "United States of America": { primary: "#002868", secondary: "#bf0a30" }, // Mavi / Kırmızı
+            "China": { primary: "#de2910", secondary: "#ffde00" },                    // Kırmızı / Sarı
+            "Germany": { primary: "#303030", secondary: "#dd0000" },                  // Siyah/Koyu Gri / Kırmızı
+            "Russia": { primary: "#1d4ed8", secondary: "#dc2626" },                   // Mavi / Kırmızı
+            "United Kingdom": { primary: "#00247d", secondary: "#cf142b" },           // Lacivert / Kırmızı
+            "France": { primary: "#0055a5", secondary: "#ffffff" },                   // Mavi (İngiltere komşuluğunda ayırt edici ton)
+            "Japan": { primary: "#bc002d", secondary: "#ffffff" },                    // Kırmızı
+            "Brazil": { primary: "#009c3b", secondary: "#ffdf00" },                   // Yeşil / Sarı
+            "India": { primary: "#ff9933", secondary: "#138808" },                    // Turuncu / Yeşil
+            "Greece": { primary: "#0d5eaf", secondary: "#003366" },                   // Mavi
+            "Iran": { primary: "#239f40", secondary: "#da0000" },                     // Yeşil / Kırmızı
+            "Canada": { primary: "#ff0000", secondary: "#d00000" },                   // Kırmızı (ABD ile komşu: ABD Mavi, Kanada Kırmızı)
+            "Mexico": { primary: "#006847", secondary: "#ce1126" },                   // Yeşil
+            "Spain": { primary: "#c60b1e", secondary: "#ffc400" },                    // Kırmızı (Fransa Mavi, İspanya Kırmızı)
+            "Portugal": { primary: "#046a38", secondary: "#da291c" },                 // Yeşil (İspanya Kırmızı, Portekiz Yeşil)
+            "Italy": { primary: "#009246", secondary: "#ce2b37" },                    // Yeşil (Fransa Mavi, İtalya Yeşil)
+            "Ukraine": { primary: "#0057b7", secondary: "#ffd700" },                  // Sarı/Mavi
+            "Poland": { primary: "#dc143c", secondary: "#e63946" },                   // Kırmızı
+            "Sweden": { primary: "#006aa7", secondary: "#fecc00" },                   // Mavi / Sarı
+            "Norway": { primary: "#ba0c2f", secondary: "#00205b" },                   // Kırmızı
+            "Finland": { primary: "#003580", secondary: "#ffffff" },                  // Mavi
+            "Egypt": { primary: "#c8102e", secondary: "#000000" },                    // Kırmızı
+            "Saudi Arabia": { primary: "#006c35", secondary: "#004d25" },             // Yeşil
+            "Australia": { primary: "#00008b", secondary: "#ff0000" },                // Lacivert
+            "Argentina": { primary: "#74acdf", secondary: "#f6b40e" },                // Açık Mavi
+            "Pakistan": { primary: "#01411c", secondary: "#ffffff" },                 // Koyu Yeşil (Hindistan Turuncu, Pakistan Yeşil)
+            "Syria": { primary: "#ce1126", secondary: "#007a3d" },                    // Kırmızı
+            "Iraq": { primary: "#007a3d", secondary: "#ce1126" }                      // Yeşil (Türkiye & İran komşuluğuna uygun)
         };
 
         const nameMapping = {
@@ -263,6 +279,17 @@
             }
         });
 
+        // Ülke isminden tutarlı bayrak/strateji rengi türeten yardımcı fonksiyon (haritada tanımlı olmayan ülkeler için)
+        function getDynamicFlagColor(engName) {
+            if (flagColors[engName]) return flagColors[engName].primary;
+            let hash = 0;
+            for (let i = 0; i < engName.length; i++) {
+                hash = engName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const h = Math.abs(hash) % 360;
+            return `hsl(${h}, 55%, 42%)`;
+        }
+
         d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
             .then(data => {
                 worldGeoJSON = data;
@@ -275,7 +302,10 @@
 
         function renderMap() {
             context.clearRect(0, 0, canvas.width, canvas.height);
-            context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ocean-color');
+            
+            // İstediğin hafif koyu mavi/lacivert okyanus rengi
+            const oceanColor = getComputedStyle(document.documentElement).getPropertyValue('--ocean-color').trim() || '#0f2b48';
+            context.fillStyle = oceanColor;
             context.fillRect(0, 0, canvas.width, canvas.height);
 
             if (!worldGeoJSON) return;
@@ -292,25 +322,20 @@
                     const engName = feature.properties.NAME;
                     const gameName = nameMapping[engName];
 
-                    // Varsayılan stil (diğer ülkeler için nötr ton)
-                    let fillColor = '#1e293b'; 
-                    let strokeColor = '#0b1329'; // Sınırları belirginleştiren koyu hat
-                    let lineWidth = 1.2 / currentTransform.k; // Sınır kalınlığı artırıldı
+                    // Ülkenin bayrak bazlı rengi
+                    let fillColor = getDynamicFlagColor(engName);
+                    let strokeColor = 'rgba(15, 23, 42, 0.75)'; // Belirgin harita sınırları
+                    let lineWidth = 1.2 / currentTransform.k;
 
-                    // Ülkeye özel renk ataması
-                    if (gameName && countryColors[gameName]) {
-                        fillColor = countryColors[gameName];
-                    }
-
-                    // Oyuncu ve Hedef öncelikli renklendirme
+                    // Oyuncu ve Hedef Ülke Vurguları
                     if (gameName === playerCountry) {
-                        fillColor = '#15803d'; // Oyuncu (Yeşil)
+                        fillColor = '#15803d'; // Oyuncu Ülkesi (Parlak Yeşil Vurgu)
                         strokeColor = '#4ade80';
-                        lineWidth = 2.0 / currentTransform.k;
+                        lineWidth = 2.4 / currentTransform.k;
                     } else if (gameName === selectedTarget) {
-                        fillColor = '#b91c1c'; // Seçilen Hedef (Kırmızı)
+                        fillColor = '#b91c1c'; // Seçilen Hedef Ülke (Kırmızı Vurgu)
                         strokeColor = '#f87171';
-                        lineWidth = 2.0 / currentTransform.k;
+                        lineWidth = 2.4 / currentTransform.k;
                     }
 
                     context.beginPath();
