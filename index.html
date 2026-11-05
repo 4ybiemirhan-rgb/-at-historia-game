@@ -29,7 +29,7 @@
             z-index: 1;
         }
 
-        /* SVG TIKLAMA KATMANI (Haritanın Üstüne Birebir Oturur) */
+        /* SVG TIKLAMA KATMANI */
         svg#interactive-overlay {
             width: 100%;
             height: 100%;
@@ -40,29 +40,29 @@
 
         /* Tıklanabilir Ülke Sınır Alanları */
         .country-region {
-            fill: rgba(255, 255, 255, 0.01); /* Görünmez Tıklama Alanı */
-            stroke: rgba(255, 255, 255, 0.2);
-            stroke-width: 1.5;
+            fill: rgba(255, 255, 255, 0.01);
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 1;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
         }
 
         .country-region:hover {
             fill: rgba(59, 130, 246, 0.35);
             stroke: #60a5fa;
-            stroke-width: 2.5;
+            stroke-width: 2;
         }
 
         .country-region.player-country {
-            fill: rgba(34, 197, 94, 0.4);
+            fill: rgba(34, 197, 94, 0.45);
             stroke: #22c55e;
-            stroke-width: 3;
+            stroke-width: 2.5;
         }
 
         .country-region.selected-country {
-            fill: rgba(239, 68, 68, 0.45);
+            fill: rgba(239, 68, 68, 0.5);
             stroke: #ef4444;
-            stroke-width: 3;
+            stroke-width: 2.5;
         }
 
         /* YÜZEN PANELLER (OVERLAY UI) */
@@ -125,32 +125,42 @@
     <!-- TAM EKRAN GERÇEK RESİM HARİTASI -->
     <div class="map-viewport">
         <svg id="interactive-overlay" viewBox="0 0 1000 500" preserveAspectRatio="none">
-            <!-- Gerçek Haritaya Denk Gelen Tıklanabilir Ülke Alanları -->
             <g id="regions">
-                <!-- Türkiye -->
-                <path id="region-Türkiye" class="country-region player-country" d="M 550 165 L 595 160 L 602 180 L 555 185 Z" onclick="selectCountry('Türkiye')"><title>Türkiye</title></path>
-                <!-- ABD -->
-                <path id="region-ABD" class="country-region" d="M 120 120 L 270 110 L 260 210 L 150 200 Z" onclick="selectCountry('ABD')"><title>ABD</title></path>
-                <!-- Çin -->
-                <path id="region-Çin" class="country-region" d="M 720 150 L 840 140 L 850 240 L 730 240 Z" onclick="selectCountry('Çin')"><title>Çin</title></path>
-                <!-- Almanya -->
-                <path id="region-Almanya" class="country-region" d="M 495 120 L 520 118 L 520 140 L 495 140 Z" onclick="selectCountry('Almanya')"><title>Almanya</title></path>
-                <!-- Rusya -->
-                <path id="region-Rusya" class="country-region" d="M 530 60 L 920 50 L 900 135 L 540 115 Z" onclick="selectCountry('Rusya')"><title>Rusya</title></path>
-                <!-- İngiltere -->
-                <path id="region-İngiltere" class="country-region" d="M 450 100 L 475 95 L 470 125 L 445 125 Z" onclick="selectCountry('İngiltere')"><title>İngiltere</title></path>
-                <!-- Fransa -->
-                <path id="region-Fransa" class="country-region" d="M 470 130 L 495 128 L 490 155 L 465 155 Z" onclick="selectCountry('Fransa')"><title>Fransa</title></path>
-                <!-- Japonya -->
-                <path id="region-Japonya" class="country-region" d="M 865 155 L 885 150 L 890 200 L 870 200 Z" onclick="selectCountry('Japonya')"><title>Japonya</title></path>
-                <!-- Brezilya -->
-                <path id="region-Brezilya" class="country-region" d="M 280 300 L 380 310 L 340 430 L 270 370 Z" onclick="selectCountry('Brezilya')"><title>Brezilya</title></path>
-                <!-- Hindistan -->
-                <path id="region-Hindistan" class="country-region" d="M 685 200 L 740 195 L 725 280 L 680 230 Z" onclick="selectCountry('Hindistan')"><title>Hindistan</title></path>
+                <!-- Türkiye (Anadolu / Trakya Konumu) -->
+                <path id="region-Türkiye" class="country-region player-country" d="M 525,215 L 560,210 L 565,235 L 520,240 Z" onclick="selectCountry('Türkiye')"><title>Türkiye</title></path>
+                
                 <!-- Yunanistan -->
-                <path id="region-Yunanistan" class="country-region" d="M 535 168 L 548 167 L 546 182 L 533 182 Z" onclick="selectCountry('Yunanistan')"><title>Yunanistan</title></path>
+                <path id="region-Yunanistan" class="country-region" d="M 505,218 L 522,215 L 520,238 L 502,235 Z" onclick="selectCountry('Yunanistan')"><title>Yunanistan</title></path>
+                
+                <!-- ABD (Kuzey Amerika) -->
+                <path id="region-ABD" class="country-region" d="M 140,140 L 290,120 L 280,240 L 160,230 Z" onclick="selectCountry('ABD')"><title>ABD</title></path>
+                
+                <!-- Çin -->
+                <path id="region-Çin" class="country-region" d="M 680,180 L 800,165 L 815,270 L 690,265 Z" onclick="selectCountry('Çin')"><title>Çin</title></path>
+                
+                <!-- Almanya -->
+                <path id="region-Almanya" class="country-region" d="M 470,170 L 495,168 L 493,192 L 468,195 Z" onclick="selectCountry('Almanya')"><title>Almanya</title></path>
+                
+                <!-- Rusya -->
+                <path id="region-Rusya" class="country-region" d="M 480,70 L 850,55 L 840,160 L 490,150 Z" onclick="selectCountry('Rusya')"><title>Rusya</title></path>
+                
+                <!-- İngiltere -->
+                <path id="region-İngiltere" class="country-region" d="M 440,155 L 460,152 L 458,175 L 438,175 Z" onclick="selectCountry('İngiltere')"><title>İngiltere</title></path>
+                
+                <!-- Fransa -->
+                <path id="region-Fransa" class="country-region" d="M 445,180 L 470,178 L 465,205 L 440,205 Z" onclick="selectCountry('Fransa')"><title>Fransa</title></path>
+                
+                <!-- Japonya -->
+                <path id="region-Japonya" class="country-region" d="M 850,200 L 875,195 L 880,245 L 855,245 Z" onclick="selectCountry('Japonya')"><title>Japonya</title></path>
+                
+                <!-- Brezilya (Güney Amerika) -->
+                <path id="region-Brezilya" class="country-region" d="M 300,320 L 390,330 L 360,450 L 280,390 Z" onclick="selectCountry('Brezilya')"><title>Brezilya</title></path>
+                
+                <!-- Hindistan -->
+                <path id="region-Hindistan" class="country-region" d="M 650,235 L 700,230 L 690,310 L 640,270 Z" onclick="selectCountry('Hindistan')"><title>Hindistan</title></path>
+                
                 <!-- İran -->
-                <path id="region-İran" class="country-region" d="M 605 175 L 650 172 L 645 215 L 602 210 Z" onclick="selectCountry('İran')"><title>İran</title></path>
+                <path id="region-İran" class="country-region" d="M 575,225 L 620,220 L 615,265 L 570,260 Z" onclick="selectCountry('İran')"><title>İran</title></path>
             </g>
         </svg>
     </div>
@@ -174,7 +184,7 @@
     <div class="left-overlay">
         <div class="panel-card">
             <h3 id="selected-country-title" style="color:var(--accent); font-size:1rem;">Hedef: ABD</h3>
-            <p id="selected-country-desc" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Haritadaki gerçek ülke topraklarına tıklayın.</p>
+            <p id="selected-country-desc" style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Haritadaki ülke sınırlarına tıklayın.</p>
             
             <div class="action-grid">
                 <button class="action-btn" onclick="doAction('alliance')">🤝 İttifak</button>
@@ -206,7 +216,7 @@
         <div class="panel-card">
             <h4 style="font-size:0.85rem; margin-bottom:6px;">📰 Dünya Olayları</h4>
             <div class="news-feed" id="news-feed">
-                <div class="news-item">Gerçek dünya haritası ve etkileşim katmanı birleştirildi.</div>
+                <div class="news-item">Ülke sınır alanları haritaya tam hizalandı.</div>
             </div>
         </div>
     </div>
