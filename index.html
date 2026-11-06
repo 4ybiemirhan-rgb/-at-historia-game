@@ -225,8 +225,8 @@ let status = 'Harita yükleniyor…';
 
 const projection = d3.geoEquirectangular().precision(0);
 const path = d3.geoPath(projection, ctx);
-let moving = false, idleT = 0, pending = 0;
-function requestRender() { if (!pending) pending = requestAnimationFrame(() => { pending = 0; renderMap(); }); }
+let moving = false, idleT = 0, frameReq = 0;
+function requestRender() { if (!frameReq) frameReq = requestAnimationFrame(() => { frameReq = 0; renderMap(); }); }
 // Hareket sırasında hafif çizim (gölge/etiket yok), durunca tam kalite çizim.
 const zoom = d3.zoom().scaleExtent([1, 60]).on('zoom', e => {
     tf = e.transform; moving = true;
