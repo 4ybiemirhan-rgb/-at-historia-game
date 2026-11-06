@@ -53,6 +53,21 @@ body.drawer-open #drawer-tab{left:300px}
 #start-modal p{margin:6px 0 4px;font-size:.85rem;color:var(--text-muted)}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel-bg);border:1px solid var(--panel-border);padding:8px 16px;border-radius:8px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.show{opacity:1}
+.chat-msg{white-space:pre-line}
+.dock-btn{background:var(--panel-bg);color:#fff;border:1px solid var(--panel-border);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;backdrop-filter:blur(10px)}
+.dock-btn:hover,.dock-btn.on{background:var(--accent);color:#0b1329}
+#dock-left{position:fixed;left:20px;bottom:20px;z-index:11;display:flex;gap:8px}
+#dock-right{position:fixed;right:20px;bottom:20px;z-index:11}
+.dock-panel{display:none;position:fixed;bottom:76px;width:360px;height:min(460px,60vh);z-index:11;flex-direction:column;background:var(--panel-bg);backdrop-filter:blur(10px);border:1px solid var(--panel-border);border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.4);padding:12px}
+.dock-panel.left{left:20px}.dock-panel.right{right:20px}.dock-panel.open{display:flex}
+.dp-head{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:8px}
+.dp-head button,.act-item button{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem}
+.dp-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;font-size:.82rem}
+.dp-chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+.chip{background:rgba(94,169,183,.2);border:1px solid var(--accent);border-radius:14px;padding:3px 10px;font-size:.75rem;cursor:pointer}
+.act-item{display:flex;justify-content:space-between;gap:8px;background:rgba(0,0,0,.3);border-left:3px solid var(--accent);border-radius:4px;padding:6px 8px}
+.act-item.bad{border-color:var(--danger)}
+.act-item small{display:block;color:var(--text-muted)}
 </style>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
@@ -105,16 +120,39 @@ body.drawer-open #drawer-tab{left:300px}
     <div class="action-grid"><button class="action-btn" id="btn-continue">▶️ Devam et</button><button class="action-btn" id="btn-new">🆕 Yeni oyun</button></div>
 </div></div>
 <input type="file" id="load-file" accept=".json" hidden onchange="importGame(this.files[0]); this.value=''">
+<div id="dock-left">
+    <button class="dock-btn" data-p="chats" onclick="openPanel('chats')">💬 Sohbetler</button>
+    <button class="dock-btn" data-p="actions" onclick="openPanel('actions')">⚡ Eylemler <span id="act-count"></span></button>
+</div>
+<button id="dock-right" class="dock-btn" data-p="advisor" onclick="openPanel('advisor')">🧭 Danışman</button>
+<section id="p-chats" class="dock-panel left">
+    <div class="dp-head"><span id="chat-title">💬 Sohbetler</span><button onclick="openPanel(null)">✕</button></div>
+    <div class="dp-chips" id="chat-threads" style="margin:0 0 8px"></div>
+    <div class="dp-body" id="chat-body"></div>
+    <div class="chat-input-area"><input id="chat-in" class="chat-input" placeholder="Mesaj yaz (örn: ittifak kuralım)" onkeydown="if(event.key==='Enter')sendChat()"><button class="send-btn" onclick="sendChat()">Gönder</button></div>
+</section>
+<section id="p-actions" class="dock-panel left">
+    <div class="dp-head"><span id="act-title">⚡ Eylemler</span><button onclick="openPanel(null)">✕</button></div>
+    <div class="dp-body" id="act-body"></div>
+    <div class="dp-chips">
+        <span class="chip" onclick="quickAct('Ekonomiyi geliştir')">📈 Ekonomi</span>
+        <span class="chip" onclick="quickAct('Orduyu güçlendir')">🪖 Ordu</span>
+        <span class="chip" onclick="quickAct('İstikrarı artır')">🏛️ İstikrar</span>
+    </div>
+    <div class="chat-input-area"><input id="act-in" class="chat-input" placeholder="Eylem yaz (örn: Suriye'ye savaş aç)" onkeydown="if(event.key==='Enter')addActionFromInput()"><button class="send-btn" onclick="addActionFromInput()">Ekle</button></div>
+</section>
+<section id="p-advisor" class="dock-panel right">
+    <div class="dp-head"><span>🧭 Danışman</span><button onclick="openPanel(null)">✕</button></div>
+    <div class="dp-body" id="adv-body"></div>
+    <div class="dp-chips">
+        <span class="chip" onclick="askAdvisor('Oyun özeti')">Oyun özeti</span>
+        <span class="chip" onclick="askAdvisor('Stratejik tavsiye')">Stratejik tavsiye</span>
+        <span class="chip" onclick="askAdvisor('Tehditler')">Tehditler</span>
+    </div>
+    <div class="chat-input-area"><input id="adv-in" class="chat-input" placeholder="Danışmanına sor..." onkeydown="if(event.key==='Enter')askAdvisor()"><button class="send-btn" onclick="askAdvisor()">Sor</button></div>
+</section>
 <div id="toast"></div>
 <div class="right-overlay">
-    <div class="panel-card">
-        <h4 style="font-size:.85rem;margin-bottom:6px">💬 Lider Diplomatik Hattı</h4>
-        <div class="chat-box" id="chat-box"><div class="chat-msg ai">Dünya sahnesinde hamlelerinizi bekliyoruz.</div></div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-input" class="chat-input" placeholder="Diplomatik mesaj...">
-            <button class="send-btn" onclick="sendDiplomacy()">Gönder</button>
-        </div>
-    </div>
     <div class="panel-card">
         <h4 style="font-size:.85rem;margin-bottom:6px">📰 Dünya Olayları</h4>
         <div class="news-feed" id="news-feed"><div class="news-item">Strateji renkleri komşu ülkelere göre otomatik dağıtıldı.</div></div>
@@ -289,6 +327,7 @@ function colorCountries() {
         if (o === undefined) seen[key] = f.id;
         else if (o !== f.id) { adj[o].add(f.id); adj[f.id].add(o); }
     }))));
+    adjMap = adj;
     const fixed = Object.keys(strictStrategyPalette).filter(n => byId[n]);
     const rest = features.map(f => f.id).filter(n => !fixed.includes(n))
         .sort((a, b) => adj[b].size - adj[a].size || (a < b ? -1 : 1));
@@ -421,7 +460,7 @@ resizeCanvas();
 
 /* ====================== KAYIT SİSTEMİ ====================== */
 const SAVE_KEY = 'paxHistoriaSave_v1';
-let newsLog = [], chatLog = [], started = false;
+let newsLog = [], chats = {}, pending = [], advLog = [], started = false, panel = null, adjMap = {};
 
 function toast(t) {
     const el = document.getElementById('toast');
@@ -430,7 +469,7 @@ function toast(t) {
 }
 function snapshot() {
     return { v: 1, t: Date.now(), playerCountry, selectedTarget, year, month, countries, countryOwners,
-             newsLog: newsLog.slice(0, 40), chatLog: chatLog.slice(-40) };
+             newsLog: newsLog.slice(0, 40), chats, pending, advLog: advLog.slice(-40) };
 }
 function saveGame(silent) {
     if (!started) return;
@@ -444,9 +483,8 @@ function applySave(d) {
     selectedTarget = countries[d.selectedTarget] && d.selectedTarget !== playerCountry
         ? d.selectedTarget : Object.keys(countries).find(k => k !== playerCountry);
     year = d.year; month = d.month; countryOwners = d.countryOwners || {};
-    newsLog = d.newsLog || []; chatLog = d.chatLog || [];
+    newsLog = d.newsLog || []; chats = d.chats || {}; pending = d.pending || []; advLog = d.advLog || [];
     if (newsLog.length) renderNews();
-    if (chatLog.length) { document.getElementById('chat-box').innerHTML = ''; chatLog.forEach(([c, t]) => drawChat(c, t)); }
     document.getElementById('current-date').innerText = `${year} / ${months[month - 1]}`;
     init(); renderMap();
 }
@@ -496,7 +534,7 @@ document.addEventListener('keydown', e => {
 });
 
 /* ====================== OYUN MANTIĞI ====================== */
-function init() { renderCountryList(); updatePlayerStats(); updateTargetInfo(); }
+function init() { renderCountryList(); updatePlayerStats(); updateTargetInfo(); renderPanels(); }
 
 function renderCountryList() {
     const list = document.getElementById("country-list");
@@ -519,7 +557,7 @@ function renderCountryList() {
 function selectCountry(key) {
     if (key === playerCountry) return;
     selectedTarget = key;
-    renderCountryList(); updateTargetInfo(); renderMap();
+    renderCountryList(); updateTargetInfo(); renderMap(); renderPanels();
 }
 
 function updatePlayerStats() {
@@ -536,18 +574,9 @@ function updateTargetInfo() {
     if (!t) return;
     document.getElementById("selected-country-title").innerText = `Hedef: ${t.name}`;
     document.getElementById("selected-country-desc").innerText =
-        `İlişki: ${t.relation}/100 • Nüfus: ${t.pop} M • Bütçe: ${t.money} M$ • Asker: ${t.army.toLocaleString()} Bin • İstikrar: %${t.stability}`;
+        `İlişki: ${t.relation}/100 • Nüfus: ${t.pop} M • Bütçe: ${t.money} M$ • Asker: ${t.army.toLocaleString()} Bin • İstikrar: %${t.stability}${t.atWar ? ' • SAVAŞTA' : t.ally ? ' • MÜTTEFİK' : t.owner ? ' • SİZİN' : ''}`;
 }
 
-function nextTurn() {
-    month++;
-    if (month > 12) { month = 1; year++; }
-    document.getElementById("current-date").innerText = `${year} / ${months[month - 1]}`;
-    countries[playerCountry].money += 5;
-    updatePlayerStats();
-    addNews(`Tarih ilerledi: ${months[month - 1]} ${year}.`);
-    saveGame(true);
-}
 
 function addNews(text) { newsLog.unshift(text); newsLog.length = Math.min(newsLog.length, 40); renderNews(); }
 function renderNews() {
@@ -556,45 +585,222 @@ function renderNews() {
     newsLog.forEach(t => { const item = document.createElement("div"); item.className = "news-item"; item.innerText = t; feed.appendChild(item); });
 }
 
+/* ====================== EYLEMLER ====================== */
+const LABELS = { war: '⚔️ Savaş', peace: '🕊️ Barış', alliance: '🤝 İttifak', trade: '📦 Ticaret', aid: '💰 Yardım',
+                 economy: '📈 Ekonomi', military: '🪖 Ordu', stability: '🏛️ İstikrar' };
+const NEEDS_TARGET = new Set(['war', 'peace', 'alliance', 'trade', 'aid']);
+const INTENTS = [['peace', /barış|ateşkes/], ['war', /savaş|saldır|işgal|harp/], ['alliance', /ittifak|müttefik/],
+    ['trade', /ticaret|ihracat|ticari/], ['aid', /yardım|bağış/], ['military', /ordu|asker|silah|savunma|tank/],
+    ['economy', /ekonomi|yatırım|kalkın|büyü|vergi|bütçe/], ['stability', /istikrar|reform|refah|halk|huzur/]];
+const fidOf = name => Object.keys(nameMapping).find(k => nameMapping[k] === name);
+const pow = c => c.army * (0.5 + c.stability / 200);
+
+// Serbest metni niyet + hedef ülkeye çevirir (kural tabanlı; ileride bir yapay zeka modeline bağlanabilir).
+function parseIntent(text, def) {
+    const t = text.toLocaleLowerCase('tr');
+    const type = (INTENTS.find(([, re]) => re.test(t)) || [])[0] || null;
+    const target = Object.keys(countries).filter(k => k !== playerCountry &&
+        new RegExp('(^|[^a-zçğıöşü])' + k.toLocaleLowerCase('tr').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(t))
+        .sort((a, b) => b.length - a.length)[0] || def || null;
+    return { type, target };
+}
+function queueAction(a) {
+    a.id = Date.now() + Math.random(); pending.push(a);
+    renderPanels(); saveGame(true); toast('Eylem listesine eklendi');
+}
+function addActionFromInput() {
+    const i = document.getElementById('act-in'), v = i.value.trim();
+    if (!v) return;
+    const { type, target } = parseIntent(v, null);
+    queueAction({ text: v, type, target, src: 'text', bad: !type || (NEEDS_TARGET.has(type) && !target) });
+    i.value = '';
+}
+function quickAct(text) { queueAction({ text, type: parseIntent(text, null).type, target: null, src: 'text' }); }
 function doAction(type) {
-    const t = countries[selectedTarget];
-    if (!t) return;
-    if (type === 'alliance') {
-        if (t.relation >= 60) { t.relation += 10; addNews(`🎉 ${t.name} ile ittifak kuruldu!`); }
-        else addNews(`❌ ${t.name} teklifi reddetti.`);
-    } else if (type === 'trade') {
-        countries[playerCountry].money += 15;
-        addNews(`📦 ${t.name} ile ticaret yapıldı (+15 M$).`);
-    } else if (type === 'aid') {
-        if (countries[playerCountry].money >= 10) {
-            countries[playerCountry].money -= 10; t.relation += 15;
-            addNews(`💰 ${t.name} ülkesine yardım edildi.`);
-        } else addNews(`❌ Yeterli bütçe yok.`);
-    } else if (type === 'war') {
-        t.relation = 0; countries[playerCountry].stability -= 10;
-        addNews(`⚔️ ${t.name} ülkesine savaş açıldı!`);
+    if (countries[selectedTarget]) queueAction({ text: `${LABELS[type]}: ${selectedTarget}`, type, target: selectedTarget, src: 'btn' });
+}
+
+/* ====================== SOHBETLER ====================== */
+function chatReply(c, text) {
+    const t = countries[c], { type } = parseIntent(text, c), r = t.relation;
+    if (type === 'war') return 'Bu bir tehdit mi? Sonuçlarına hazırlıklı olun.';
+    if (['alliance', 'trade', 'aid', 'peace'].includes(type)) {
+        const ok = type === 'aid' || (type === 'alliance' && r >= 60) || (type === 'trade' && r >= 35) || (type === 'peace' && t.atWar);
+        if (!ok) return type === 'peace' ? 'Aramızda bir savaş yok.' : 'Şu an bu teklife sıcak bakmıyoruz.';
+        queueAction({ text: `${c} ile ${LABELS[type]} anlaşması`, type, target: c, src: 'chat', sure: true });
+        return 'Teklifinizi kabul ediyoruz. Anlaşma tur sonunda yürürlüğe girecek.';
     }
-    updatePlayerStats(); updateTargetInfo(); renderCountryList(); renderMap();
-    saveGame(true);
+    return r >= 60 ? 'Dostane yaklaşımınızı memnuniyetle karşılıyoruz.' : r >= 30 ? 'Mesajınız ulaştı, değerlendiriyoruz.' : 'Bu ilişki düzeyinde konuşacak pek bir şeyimiz yok.';
+}
+function sendChat() {
+    const i = document.getElementById('chat-in'), v = i.value.trim(), c = selectedTarget;
+    if (!v || !countries[c]) return;
+    (chats[c] = chats[c] || []).push(['player', v]); i.value = ''; renderPanels();
+    setTimeout(() => { chats[c].push(['ai', chatReply(c, v)]); renderPanels(); saveGame(true); }, 600);
 }
 
-function drawChat(cls, text) {
-    const box = document.getElementById("chat-box"), d = document.createElement("div");
-    d.className = "chat-msg " + cls; d.textContent = text;
-    box.appendChild(d); box.scrollTop = box.scrollHeight;
+/* ====================== DANIŞMAN ====================== */
+function neighbors() {
+    return [...(adjMap[fidOf(playerCountry)] || [])].map(id => countries[nameMapping[id]]).filter(Boolean);
 }
-function addChat(cls, text) { chatLog.push([cls, text]); if (chatLog.length > 40) chatLog.shift(); drawChat(cls, text); }
+function summary() {
+    const all = Object.values(countries), p = countries[playerCountry];
+    const names = a => a.map(c => c.name).join(', ') || 'yok';
+    return `📅 ${months[month - 1]} ${year}, ${playerCountry}\n• Bütçe ${p.money} M$, nüfus ${p.pop} M, asker ${p.army} Bin, istikrar %${p.stability}\n• Savaşta: ${names(all.filter(c => c.atWar))}\n• İttifaklar: ${names(all.filter(c => c.ally))}\n• Fethedilen: ${names(all.filter(c => c.owner === playerCountry))}\n• Bekleyen eylem: ${pending.length}\n• Son olaylar: ${newsLog.slice(0, 3).join(' | ') || 'henüz yok'}`;
+}
+function threats() {
+    const p = countries[playerCountry];
+    const risky = neighbors().filter(c => !c.owner && (c.relation < 40 || c.atWar)).sort((a, b) => pow(b) - pow(a)).slice(0, 3);
+    if (!risky.length) return 'Komşularınızla ilişkiler şimdilik sakin.';
+    return 'Komşu tehditler:\n' + risky.map(c => `• ${c.name}: ilişki ${c.relation}/100, güç ${Math.round(pow(c))} (sizinki ${Math.round(pow(p))})${c.atWar ? ' — SAVAŞTA' : ''}`).join('\n');
+}
+function advice() {
+    const p = countries[playerCountry], nb = neighbors().filter(c => !c.owner), tips = [];
+    if (p.stability < 60) tips.push('İstikrar düşük: "İstikrarı artır" eylemini ekleyin.');
+    if (p.money < 50) tips.push('Bütçe zayıf: ekonomi programı ve ticaret anlaşmaları gelir getirir.');
+    Object.values(countries).filter(c => c.atWar).forEach(c => tips.push(pow(p) >= pow(c)
+        ? `${c.name} cephesinde üstünlük sizde, baskıyı sürdürün.` : `${c.name} sizden güçlü: orduyu güçlendirin ya da barış önerin.`));
+    const friend = nb.find(c => !c.atWar && !c.ally && c.relation >= 60);
+    if (friend) tips.push(`${friend.name} ile ilişkiler iyi (${friend.relation}/100): ittifak önerebilirsiniz.`);
+    const weak = nb.find(c => !c.atWar && pow(c) < pow(p) * 0.5);
+    if (weak) tips.push(`${weak.name} komşunuz zayıf, ama savaş istikrarınızı da sarsar.`);
+    if (!pending.length) tips.push('Bu tur için henüz eylem planlamadınız.');
+    return '🧭 Tavsiyelerim:\n• ' + tips.join('\n• ');
+}
+function advisorReply(q) {
+    const t = q.toLocaleLowerCase('tr'), p = countries[playerCountry];
+    if (/özet/.test(t)) return summary();
+    if (/tehdit|düşman|savaş/.test(t)) return threats();
+    if (/tavsiye|öner|ne yap|strateji/.test(t)) return advice();
+    if (/ekonomi|bütçe|para/.test(t)) return `Bütçeniz ${p.money} M$, tur geliri yaklaşık ${5 + Math.round(p.pop / 20)} M$. ` + (p.money < 50 ? 'Ekonomi programı ve ticaret anlaşmaları şart.' : 'Durum rahat; orduya ya da diplomasiye yatırım yapabilirsiniz.');
+    return 'Başkanım, "Oyun özeti", "Stratejik tavsiye" ya da "Tehditler" diye sorabilirsiniz.';
+}
+function askAdvisor(q) {
+    const i = document.getElementById('adv-in');
+    q = q || i.value.trim(); i.value = '';
+    if (!q) return;
+    advLog.push(['player', q]); advLog.push(['ai', advisorReply(q)]);
+    renderPanels(); saveGame(true);
+}
 
-function sendDiplomacy() {
-    const input = document.getElementById("chat-input"), val = input.value.trim(), t = countries[selectedTarget];
-    if (!val || !t) return;
-    addChat('player', val); input.value = "";
-    const r = t.relation;
-    const reply = r >= 60 ? "Dostane yaklaşımınızı memnuniyetle karşılıyoruz."
-        : r >= 30 ? "Talebiniz değerlendirmeye alındı." : "Bu ilişki düzeyinde konuşacak pek bir şeyimiz yok.";
-    setTimeout(() => addChat('ai', `${t.name}: ${reply}`), 800);
+/* ====================== PANELLER ====================== */
+function openPanel(n) {
+    panel = panel === n ? null : n;
+    if (panel === 'advisor' && !advLog.length) advLog.push(['ai', `Başkanım, emrinizdeyim. Önce "Oyun özeti" ile durumu görebilir, sonra "Stratejik tavsiye" isteyebilirsiniz.`]);
+    renderPanels();
 }
-document.getElementById('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendDiplomacy(); });
+function fill(box, rows) {
+    box.innerHTML = '';
+    rows.forEach(([cls, text]) => { const d = document.createElement('div'); d.className = 'chat-msg ' + cls; d.textContent = text; box.appendChild(d); });
+    box.scrollTop = box.scrollHeight;
+}
+function renderPanels() {
+    ['chats', 'actions', 'advisor'].forEach(n => document.getElementById('p-' + n).classList.toggle('open', panel === n));
+    document.querySelectorAll('.dock-btn').forEach(b => b.classList.toggle('on', b.dataset.p === panel));
+    document.getElementById('act-count').textContent = pending.length ? `(${pending.length})` : '';
+    if (panel === 'actions') {
+        document.getElementById('act-title').textContent = `⚡ Eylemler • ${months[month - 1]} ${year}`;
+        const box = document.getElementById('act-body'); box.innerHTML = '';
+        if (!pending.length) box.innerHTML = '<div style="color:var(--text-muted)">Bu tur için eylem yok. Yaz ya da hızlı eylem seç; "Turu Bitir" deyince uygulanır.</div>';
+        pending.forEach(a => {
+            const d = document.createElement('div'); d.className = 'act-item' + (a.bad || !a.type ? ' bad' : '');
+            const label = (LABELS[a.type] || '❓ Anlaşılamadı') + (a.target ? ' → ' + a.target : '');
+            const left = document.createElement('div'); left.textContent = a.text;
+            const sm = document.createElement('small'); sm.textContent = a.bad || !a.type ? 'Anlaşılamadı, tur sonunda yok sayılır' : label + (a.src === 'chat' ? ' • sohbetten' : '');
+            left.appendChild(sm);
+            const x = document.createElement('button'); x.textContent = '✕'; x.onclick = () => { pending = pending.filter(p => p.id !== a.id); renderPanels(); saveGame(true); };
+            d.append(left, x); box.appendChild(d);
+        });
+    } else if (panel === 'chats') {
+        document.getElementById('chat-title').textContent = `💬 ${selectedTarget}`;
+        const th = document.getElementById('chat-threads'); th.innerHTML = '';
+        Object.keys(chats).filter(k => k !== selectedTarget).forEach(k => {
+            const c = document.createElement('span'); c.className = 'chip'; c.textContent = k; c.onclick = () => selectCountry(k); th.appendChild(c);
+        });
+        const rows = chats[selectedTarget] || [];
+        fill(document.getElementById('chat-body'), rows.length ? rows : [['ai', `${selectedTarget} ile görüşmeye başlayın. İttifak, ticaret, yardım ya da barış teklif edebilirsiniz.`]]);
+    } else if (panel === 'advisor') fill(document.getElementById('adv-body'), advLog);
+}
+
+/* ====================== TUR ÇÖZÜMÜ ====================== */
+function applyAction(a, log) {
+    const p = countries[playerCountry], t = countries[a.target];
+    if (a.bad || !a.type) return log(`❓ "${a.text}" anlaşılamadığı için uygulanmadı.`);
+    if (NEEDS_TARGET.has(a.type) && !t) return log(`❓ "${a.text}" için hedef ülke yok.`);
+    if (a.type === 'economy') { p.money += 12 + Math.round(p.money * 0.03); p.stability += 1; return log('📈 Ekonomi programı bütçeyi artırdı.'); }
+    if (a.type === 'military') {
+        if (p.money < 10) return log('❌ Orduyu güçlendirmek için bütçe yetersiz.');
+        p.money -= 10; p.army += Math.round(p.army * 0.05) + 10; return log('🪖 Ordu güçlendirildi (-10 M$).');
+    }
+    if (a.type === 'stability') {
+        if (p.money < 5) return log('❌ Reform paketi için bütçe yetersiz.');
+        p.money -= 5; p.stability += 4; return log('🏛️ Reformlar istikrarı artırdı (-5 M$).');
+    }
+    if (t.owner) return log(`ℹ️ ${t.name} zaten sizin.`);
+    if (a.type === 'war') {
+        t.atWar = true; t.ally = false; t.relation = 0; p.stability -= 5;
+        return log(`⚔️ ${t.name} ülkesine savaş açıldı!`);
+    }
+    if (a.type === 'peace') {
+        if (!t.atWar) return log(`ℹ️ ${t.name} ile zaten barıştasınız.`);
+        t.atWar = false; t.relation = 25; return log(`🕊️ ${t.name} ile barış sağlandı.`);
+    }
+    if (t.atWar) return log(`❌ ${t.name} ile savaştasınız, anlaşma yapılamaz.`);
+    if (a.type === 'alliance') {
+        if (!a.sure && t.relation < 60) return log(`❌ ${t.name} ittifak teklifini reddetti.`);
+        t.relation += 10; t.ally = true; return log(`🤝 ${t.name} ile ittifak kuruldu!`);
+    }
+    if (a.type === 'trade') {
+        if (!a.sure && t.relation < 35) return log(`❌ ${t.name} ticaret teklifini reddetti.`);
+        p.money += 15; t.relation += 5; return log(`📦 ${t.name} ile ticaret yapıldı (+15 M$).`);
+    }
+    if (a.type === 'aid') {
+        if (p.money < 10) return log('❌ Yardım için bütçe yetersiz.');
+        p.money -= 10; t.relation += 15; log(`💰 ${t.name} ülkesine yardım edildi (-10 M$).`);
+    }
+}
+function conquer(c, log) {
+    const p = countries[playerCountry], fid = fidOf(c.name);
+    if (fid) countryOwners[fid] = fidOf(playerCountry);
+    c.atWar = false; c.ally = false; c.owner = playerCountry; c.stability = 40; c.relation = 100;
+    p.pop = Math.round((p.pop + c.pop) * 10) / 10; p.money += Math.round(c.money / 2); p.army += Math.round(c.army / 4);
+    log(`🏴 ${c.name} fethedildi! Topraklar artık sizin renginizde.`);
+}
+function resolveWars(log) {
+    const p = countries[playerCountry];
+    Object.values(countries).filter(c => c.atWar).forEach(c => {
+        const ratio = pow(p) / Math.max(1, pow(c));
+        if (ratio >= 1) {
+            c.stability -= Math.round(8 + 6 * Math.min(ratio, 3)); c.army = Math.round(c.army * 0.93); p.army = Math.round(p.army * 0.98);
+            log(`⚔️ ${c.name} cephesinde üstünlük sizde.`);
+        } else {
+            p.stability -= 4; p.army = Math.round(p.army * 0.93); c.army = Math.round(c.army * 0.98);
+            log(`⚔️ ${c.name} cephesinde ağır kayıplar veriyoruz.`);
+        }
+        if (c.stability <= 15) conquer(c, log);
+    });
+}
+function nextTurn() {
+    const lines = [], log = t => lines.push(t), queue = pending;
+    pending = [];
+    queue.forEach(a => applyAction(a, log));
+    resolveWars(log);
+    const p = countries[playerCountry], income = 5 + Math.round(p.pop / 20);
+    p.money += income; log(`💵 Vergi geliri: +${income} M$`);
+    Object.values(countries).forEach(c => { c.relation = Math.max(0, Math.min(100, c.relation)); c.stability = Math.max(0, Math.min(100, c.stability)); });
+    month++;
+    if (month > 12) { month = 1; year++; }
+    const date = `${months[month - 1]} ${year}`;
+    [...lines].reverse().forEach(addNews); addNews(`📅 ${date}`);
+    advLog.push(['ai', `📅 ${date}: tur sonuçları\n• ` + lines.join('\n• ')]);
+    document.getElementById("current-date").innerText = `${year} / ${months[month - 1]}`;
+    updatePlayerStats(); updateTargetInfo(); renderCountryList(); renderMap(); renderPanels();
+    saveGame(true); toast('Tur tamamlandı');
+}
+
+
+
+
 </script>
 </body>
 </html>
