@@ -4,7 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pax Historia Style - Strategy Map</title>
-<style>
+<style>.tc{width:236px;padding:10px 12px}
+.tc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tc-head h3{font-size:.95rem;color:var(--accent)}
+#tc-badge{font-size:.68rem;color:var(--text-muted)}
+.tc-row{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;padding:3px 0;border-top:1px solid rgba(51,65,85,.5)}
+.tc-row>span:first-child{color:var(--text-muted)}
+.stars{color:#fbbf24;letter-spacing:1px;font-size:.85rem}
+.stars i{font-style:normal;color:#475569}
+.tc-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.tc-actions .action-btn{display:flex;flex-direction:column;align-items:center;padding:5px 2px;font-size:.95rem;line-height:1.1}
+.tc-actions small{font-size:.58rem;color:var(--text-muted);margin-top:2px}
+.tc-actions .action-btn:hover small{color:#0b1329}
+.tc-actions .war{border-bottom:2px solid var(--danger)}
 :root{--panel-bg:rgba(13,27,42,.9);--panel-border:rgba(51,65,85,.7);--text-main:#f8fafc;--text-muted:#94a3b8;--accent:#5EA9B7;--danger:#7F332E;--success:#285B4A;--ocean-color:#1B2A64}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
 body,html{width:100%;height:100%;overflow:hidden;background:var(--ocean-color);color:var(--text-main)}
@@ -97,18 +109,20 @@ body.drawer-open #drawer-tab{left:300px}
 </div>
 
 <div class="left-overlay">
-    <div class="panel-card">
-        <h3 id="selected-country-title" style="color:var(--accent);font-size:1rem">Hedef: ABD</h3>
-        <p id="selected-country-desc" style="font-size:.8rem;color:var(--text-muted);margin-top:4px">Haritadaki ülkelere tıklayarak seçin.</p>
-        <div class="action-grid">
-            <button class="action-btn" onclick="doAction('alliance')">🤝 İttifak</button>
-            <button class="action-btn" onclick="doAction('trade')">📦 Ticaret</button>
-            <button class="action-btn" onclick="doAction('aid')">💰 Yardım</button>
-            <button class="action-btn" onclick="doAction('war')" style="border-left:3px solid var(--danger)">⚔️ Savaş</button>
+    <div class="panel-card tc">
+        <div class="tc-head"><h3 id="selected-country-title">ABD</h3><span id="tc-badge"></span></div>
+        <div class="tc-row"><span>👥 Nüfus</span><b id="tc-pop">-</b></div>
+        <div class="tc-row"><span>🪖 Askeri güç</span><span class="stars" id="tc-mil"></span></div>
+        <div class="tc-row"><span>💰 Ekonomi</span><span class="stars" id="tc-eco"></span></div>
+        <div class="tc-row"><span>🤝 İlişki</span><b id="tc-rel">-</b></div>
+        <div class="tc-actions">
+            <button class="action-btn" onclick="doAction('alliance')">🤝<small>İttifak</small></button>
+            <button class="action-btn" onclick="doAction('trade')">📦<small>Ticaret</small></button>
+            <button class="action-btn" onclick="doAction('aid')">💰<small>Yardım</small></button>
+            <button class="action-btn war" onclick="doAction('war')">⚔️<small>Savaş</small></button>
         </div>
     </div>
 </div>
-
 <button id="drawer-tab" onclick="toggleDrawer()" title="Dünya ülkeleri">🌍</button>
 <aside id="country-drawer" class="panel-card">
     <h4 style="font-size:.85rem;color:var(--text-muted)">Dünya Ülkeleri</h4>
@@ -207,7 +221,42 @@ let selectedTarget = "ABD";
 let year = 2026, month = 1;
 const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let countryOwners = {}; // { "Greece": "Turkey" } -> Yunanistan, Türkiye'nin rengini alır
-
+/* ====================== GERÇEK VERİ: NÜFUS + YILDIZLAR ====================== */
+// Biçim: "Haritadaki İngilizce ad": [nüfus (milyon, ~2025), ekonomi ★, askeri ★]
+const REAL = {
+ "United States of America":[347,5,5],"China":[1416,5,5],"India":[1464,5,5],"Russia":[144,4,5],
+ "Germany":[84,5,4],"Japan":[123,5,4],"United Kingdom":[69,5,4],"France":[66,5,4],
+ "Italy":[59,4,4],"South Korea":[52,4,4],"Turkey":[87,4,4],"Israel":[9.4,3,4],"Pakistan":[255,3,4],
+ "Ukraine":[38,2,4],"North Korea":[26,1,4],
+ "Canada":[41,4,3],"Brazil":[213,4,3],"Australia":[27,4,3],"Spain":[49,4,3],"Mexico":[131,4,3],
+ "Indonesia":[284,4,3],"Saudi Arabia":[34,4,3],"Poland":[38,3,3],"Taiwan":[23,3,3],"Iran":[92,3,3],
+ "Egypt":[118,3,3],"Vietnam":[101,3,3],"Greece":[10.4,3,3],"Sweden":[10.6,3,3],"Finland":[5.6,3,3],"Algeria":[47,3,3],
+ "Netherlands":[18,4,2],"Switzerland":[9,3,2],"Argentina":[46,3,2],"South Africa":[64,3,2],"Nigeria":[237,3,2],
+ "Thailand":[71,3,2],"Philippines":[116,3,2],"Bangladesh":[175,3,2],"Malaysia":[35,3,2],"Singapore":[6.1,3,2],
+ "Norway":[5.6,3,2],"Belgium":[11.7,3,2],"Denmark":[6,3,2],"United Arab Emirates":[11,3,2],"Colombia":[53,3,2],
+ "Chile":[20,3,2],"Romania":[19,3,2],"Czechia":[10.9,3,2],"Portugal":[10.4,3,2],"Iraq":[46,3,2],
+ "Kazakhstan":[20,3,2],"Peru":[34,3,2],"Austria":[9.1,3,1],"Ireland":[5.3,3,1],
+ "Azerbaijan":[10.3,2,2],"Ethiopia":[135,2,2],"Venezuela":[28,2,2],"Morocco":[38,2,2],"Uzbekistan":[37,2,2],
+ "Syria":[25,1,2],"Sudan":[50,1,2],"Armenia":[3,1,2],"Dem. Rep. Congo":[110,2,1],"Libya":[7.4,2,1],
+ "Afghanistan":[43,1,1],"Cuba":[10.9,1,1],"Mongolia":[3.5,1,1],"Georgia":[3.7,1,1],"Greenland":[0.057,1,1]
+};
+const RATING = {};
+const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
+// Tabloda olmayan ülkelerin yıldızları harita verisindeki GSYH ve nüfustan otomatik hesaplanır.
+function applyReal(f) {
+    const n = nameMapping[f.id], c = countries[n];
+    if (!c) return;
+    const r = REAL[f.id];
+    if (r) { c.pop = r[0]; RATING[n] = { eco: r[1], mil: r[2] }; return; }
+    const gdp = f.properties.GDP_MD || f.properties.GDP_MD_EST || 0;
+    const eco = gdp >= 250000 ? 3 : gdp >= 50000 ? 2 : 1;
+    RATING[n] = { eco, mil: clampN(Math.round((eco + (c.pop >= 100 ? 3 : c.pop >= 25 ? 2 : 1)) / 2), 1, 3) };
+}
+const stars = n => '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i>';
+const fmtPop = m => m >= 1000 ? (m / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' Mr'
+    : m >= 10 ? Math.round(m).toLocaleString('tr-TR') + ' M'
+    : m >= 1 ? m.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' M'
+    : Math.round(m * 1000).toLocaleString('tr-TR') + ' B';
 /* ====================== HARİTA MOTORU ====================== */
 const canvas = document.getElementById('gameMap');
 const ctx = canvas.getContext('2d');
@@ -310,7 +359,7 @@ function prepare(data) {
             f.parts.push({ g, bb: d3.geoBounds(g) });
         });
         f.area = bestA; f.lbl = d3.geoCentroid(best); f.bb = d3.geoBounds(f);
-        makeCountry(f);
+makeCountry(f); applyReal(f);
     });
     for (const k in nameMapping) if (byId[k]) featOf[nameMapping[k]] = byId[k];
     colorCountries();
@@ -564,7 +613,7 @@ function updatePlayerStats() {
     const p = countries[playerCountry];
     document.getElementById("stat-name").innerText = p.name;
     document.getElementById("stat-money").innerText = p.money + " M$";
-    document.getElementById("stat-pop").innerText = p.pop + " M";
+   document.getElementById("stat-pop").innerText = fmtPop(p.pop);
     document.getElementById("stat-army").innerText = p.army.toLocaleString() + " Bin";
     document.getElementById("stat-stability").innerText = "%" + p.stability;
 }
@@ -572,11 +621,14 @@ function updatePlayerStats() {
 function updateTargetInfo() {
     const t = countries[selectedTarget];
     if (!t) return;
-    document.getElementById("selected-country-title").innerText = `Hedef: ${t.name}`;
-    document.getElementById("selected-country-desc").innerText =
-        `İlişki: ${t.relation}/100 • Nüfus: ${t.pop} M • Bütçe: ${t.money} M$ • Asker: ${t.army.toLocaleString()} Bin • İstikrar: %${t.stability}${t.atWar ? ' • SAVAŞTA' : t.ally ? ' • MÜTTEFİK' : t.owner ? ' • SİZİN' : ''}`;
+    const r = RATING[selectedTarget] || { eco: 1, mil: 1 };
+    document.getElementById("selected-country-title").innerText = t.name;
+    document.getElementById("tc-pop").innerText = fmtPop(t.pop);
+    document.getElementById("tc-mil").innerHTML = stars(r.mil);
+    document.getElementById("tc-eco").innerHTML = stars(r.eco);
+    document.getElementById("tc-rel").innerText = t.relation + '/100';
+    document.getElementById("tc-badge").innerText = t.atWar ? '⚔️ Savaşta' : t.owner ? '🏴 Sizin' : t.ally ? '🤝 Müttefik' : '';
 }
-
 
 function addNews(text) { newsLog.unshift(text); newsLog.length = Math.min(newsLog.length, 40); renderNews(); }
 function renderNews() {
